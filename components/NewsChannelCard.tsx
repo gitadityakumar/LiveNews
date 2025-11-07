@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { ChevronRight } from 'lucide-react-native';
+import {   RefreshCw } from 'lucide-react-native';
 
 interface NewsChannel {
   id: number;
@@ -28,7 +28,7 @@ export default function NewsChannelCard({ channel, onPress }: NewsChannelCardPro
         <Text style={styles.subtitle}>{channel.category}</Text>
       </View>
       <View style={styles.actionButton}>
-        <ChevronRight size={18} color="#A0A5B3" />
+        <RefreshCw size={18} color="#A0A5B3" />
       </View>
     </Pressable>
   );

@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
-import { Monitor, Settings } from 'lucide-react-native';
+import { TabBarVisibilityProvider } from '@/components/TabBarVisibilityContext';
+import GlassTabBar from '@/components/GlassTabBar';
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
@@ -44,35 +45,28 @@ export default function TabLayout() {
   }, []);
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: '#1a1a1a',
-          borderTopColor: '#333',
-          display: isFullscreen ? 'none' : 'flex', // Hide the tab bar in fullscreen mode
-        },
-        tabBarActiveTintColor: '#ff3b30',
-        tabBarInactiveTintColor: '#888',
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Live News',
-          tabBarIcon: ({ size, color }) => (
-            <Monitor size={size} color={color} />
-          ),
+    <TabBarVisibilityProvider>
+      <Tabs
+        tabBar={isFullscreen ? () => null : (props) => <GlassTabBar {...props} />}
+        screenOptions={{
+          headerShown: true,
         }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: 'Settings',
-          tabBarIcon: ({ size, color }) => (
-            <Settings size={size} color={color} />
-          ),
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Home',
+            headerShown: false,
+          }}
+        />
+        <Tabs.Screen
+          name="settings"
+          options={{
+            title: 'Settings',
+            headerShown: false,
+          }}
+        />
+      </Tabs>
+    </TabBarVisibilityProvider>
   );
 }

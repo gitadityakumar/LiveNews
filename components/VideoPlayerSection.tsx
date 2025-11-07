@@ -25,15 +25,28 @@ export default function VideoPlayerSection({
   const [showControls, setShowControls] = useState(true);
   const [isDelayed, setIsDelayed] = useState(false);
   const [isMounted, setIsMounted] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(true);
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playerRef = useRef<VideoPlayer | null>(null);
 
   const player = useVideoPlayer(streamUrl, (player) => {
     player.loop = true;
     player.play();
+    setIsPlaying(true);
   });
 
   // Store player reference
+  // Sync local playing state with player state
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isMounted && playerRef.current) {
+        setIsPlaying(playerRef.current.playing);
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [isMounted]);
+
   useEffect(() => {
     playerRef.current = player;
   }, [player]);
@@ -64,10 +77,13 @@ export default function VideoPlayerSection({
   }, []);
 
   useEffect(() => {
+    // Clear any existing timeout
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
+
+    // Set new timeout when controls are shown
     if (showControls && isMounted) {
-      if (controlsTimeoutRef.current) {
-        clearTimeout(controlsTimeoutRef.current);
-      }
       controlsTimeoutRef.current = setTimeout(() => {
         if (isMounted) {
           setShowControls(false);
@@ -79,12 +95,12 @@ export default function VideoPlayerSection({
       if (controlsTimeoutRef.current) {
         clearTimeout(controlsTimeoutRef.current);
       }
-      controlsTimeoutRef.current = null;
     };
   }, [showControls, isMounted]);
 
   const handleScreenTouch = () => {
-    setShowControls(!showControls);
+    // Toggle controls visibility
+    setShowControls(true);
   };
 
   const toggleFullscreen = async () => {
@@ -174,22 +190,11 @@ export default function VideoPlayerSection({
     }),
   }), [showControls]);
 
-  const liveIndicatorOpacity = useAnimatedStyle(() => ({
-    opacity: withTiming(showControls ? 1 : 0, {
-      duration: 300,
-    }),
-  }), [showControls]);
-
   const containerStyle = isFullscreen ? styles.fullscreenContainer : styles.container;
 
   return (
     <View style={containerStyle}>
       <View style={isFullscreen ? styles.fullscreenVideoContainer : styles.videoContainer}>
-        {/* Touch handler overlay for the entire video */}
-        <Pressable
-          onPress={handleScreenTouch}
-          style={styles.fullScreenOverlay}
-        />
         <VideoView
           key={streamUrl}
           player={player}
@@ -198,48 +203,60 @@ export default function VideoPlayerSection({
           nativeControls={false}
           fullscreenOptions={{ enable: false }}
         />
-        <Animated.View style={[styles.liveIndicatorContainer, liveIndicatorOpacity]}>
-          <Pressable onPress={jumpToLive} style={styles.liveIndicator}>
-            <View
-              style={[
-                styles.liveDot,
-                { backgroundColor: isDelayed ? '#fff' : '#E74C3C' },
-              ]}
-            />
-            <Text style={styles.liveText}>LIVE</Text>
-          </Pressable>
-        </Animated.View>
-        {/* Full-screen overlay for controls when visible */}
-        <Animated.View style={[styles.overlayContainer, controlsOpacity]}>
+        
+        {/* Full-screen overlay for controls */}
+        <View style={[styles.overlayContainer, { zIndex: isFullscreen ? 9999 : 10 }]}>
+          {/* Touch overlay - Always visible to capture touches */}
           <Pressable
             onPress={handleScreenTouch}
             style={styles.overlayTouchArea}
+            android_ripple={{ color: 'transparent' }}
+          />
+
+          {/* Centered Play/Pause Button */}
+          <Animated.View 
+            style={[styles.centerControls, controlsOpacity]}
+            pointerEvents={showControls ? 'auto' : 'none'}
           >
-            {/* This makes the entire video area tappable */}
-          </Pressable>
-          <Animated.View style={styles.controlsBarContainer}>
-            <AnimatedBlurView
-              intensity={Platform.OS === 'ios' ? 80 : 100}
-              tint="dark"
-              style={styles.controlsBlur}
-            />
-            <View style={styles.controls}>
-              <Pressable
-                onPress={() => {
-                  if (!isMounted) return;
-                  try {
-                    player.playing ? player.pause() : player.play();
-                  } catch (error) {
-                    // Handle error silently - player may be released
+            <Pressable
+              onPress={() => {
+                if (!isMounted) return;
+                try {
+                  if (player.playing) {
+                    player.pause();
+                    setIsPlaying(false);
+                  } else {
+                    player.play();
+                    setIsPlaying(true);
                   }
-                }}
-                style={styles.controlButton}
-              >
-                {player.playing ? (
-                  <Pause color="white" size={28} />
-                ) : (
-                  <Play color="white" size={28} />
-                )}
+                } catch (error) {
+                  // Handle error silently - player may be released
+                }
+              }}
+              style={styles.centerControlButton}
+            >
+              {isPlaying ? (
+                <Pause color="white" size={32} />
+              ) : (
+                <Play color="white" size={32} />
+              )}
+            </Pressable>
+          </Animated.View>
+
+          {/* Bottom Left Controls - LIVE Badge and Mute/Unmute */}
+          <Animated.View 
+            style={[styles.bottomLeftControls, controlsOpacity]}
+            pointerEvents={showControls ? 'auto' : 'none'}
+          >
+            <View style={styles.bottomLeftContainer}>
+              <Pressable onPress={jumpToLive} style={styles.liveIndicator}>
+                <View
+                  style={[
+                    styles.liveDot,
+                    { backgroundColor: isDelayed ? '#fff' : '#E74C3C' },
+                  ]}
+                />
+                <Text style={styles.liveText}>LIVE</Text>
               </Pressable>
               <Pressable
                 onPress={() => {
@@ -253,21 +270,31 @@ export default function VideoPlayerSection({
                 style={styles.controlButton}
               >
                 {player.muted ? (
-                  <VolumeX color="white" size={24} />
+                  <VolumeX color="white" size={20} />
                 ) : (
-                  <Volume2 color="white" size={24} />
-                )}
-              </Pressable>
-              <Pressable onPress={toggleFullscreen} style={styles.controlButton}>
-                {isFullscreen ? (
-                  <Minimize2 color="white" size={24} />
-                ) : (
-                  <Maximize2 color="white" size={24} />
+                  <Volume2 color="white" size={20} />
                 )}
               </Pressable>
             </View>
           </Animated.View>
-        </Animated.View>
+
+          {/* Bottom Right Controls - Fullscreen Button */}
+          <Animated.View 
+            style={[styles.bottomRightControls, controlsOpacity]}
+            pointerEvents={showControls ? 'auto' : 'none'}
+          >
+            <Pressable
+              onPress={toggleFullscreen}
+              style={styles.controlButton}
+            >
+              {isFullscreen ? (
+                <Minimize2 color="white" size={24} />
+              ) : (
+                <Maximize2 color="white" size={24} />
+              )}
+            </Pressable>
+          </Animated.View>
+        </View>
       </View>
     </View>
   );
@@ -276,7 +303,7 @@ export default function VideoPlayerSection({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    height: 250,
+    height: 260,
     backgroundColor: '#0A0E1A',
     position: 'relative',
   },
@@ -338,18 +365,56 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
-  // Container for the controls bar
-  controlsBarContainer: {
+  // Center controls for play/pause button
+  centerControls: {
     position: 'absolute',
-    bottom: 0,
+    top: 0,
     left: 0,
     right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
   },
-  liveIndicatorContainer: {
+  centerControlButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(42, 49, 66, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  // Bottom left controls container (LIVE badge + Mute)
+  bottomLeftControls: {
     position: 'absolute',
-    top: 16,
+    bottom: 16,
+    left: 16,
+    zIndex: 20,
+  },
+  bottomLeftContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  // Bottom right controls container (Fullscreen button)
+  bottomRightControls: {
+    position: 'absolute',
+    bottom: 16,
     right: 16,
     zIndex: 20,
+  },
+  // Control button style for small buttons
+  controlButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(42, 49, 66, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   liveIndicator: {
     flexDirection: 'row',
@@ -374,28 +439,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 1,
-  },
-  controlsBlur: {
-    backgroundColor: 'rgba(10, 14, 26, 0.3)',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  controls: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    gap: 16,
-  },
-  controlButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(42, 49, 66, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
 });

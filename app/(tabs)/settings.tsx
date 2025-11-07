@@ -17,8 +17,8 @@ export default function Settings() {
           <Switch
             value={autoplay}
             onValueChange={setAutoplay}
-            trackColor={{ false: '#333', true: '#ff3b30' }}
-            thumbColor={autoplay ? '#fff' : '#f4f3f4'}
+            trackColor={{ false: '#4B5563', true: '#3B82F6' }}
+            thumbColor={autoplay ? '#FFFFFF' : '#4B5563'}
           />
         </View>
         <View style={styles.setting}>
@@ -26,8 +26,8 @@ export default function Settings() {
           <Switch
             value={dataSaver}
             onValueChange={setDataSaver}
-            trackColor={{ false: '#333', true: '#ff3b30' }}
-            thumbColor={dataSaver ? '#fff' : '#f4f3f4'}
+            trackColor={{ false: '#4B5563', true: '#3B82F6' }}
+            thumbColor={dataSaver ? '#FFFFFF' : '#4B5563'}
           />
         </View>
       </View>
@@ -39,8 +39,8 @@ export default function Settings() {
           <Switch
             value={notifications}
             onValueChange={setNotifications}
-            trackColor={{ false: '#333', true: '#ff3b30' }}
-            thumbColor={notifications ? '#fff' : '#f4f3f4'}
+            trackColor={{ false: '#4B5563', true: '#3B82F6' }}
+            thumbColor={notifications ? '#FFFFFF' : '#4B5563'}
           />
         </View>
       </View>
@@ -62,53 +62,82 @@ export default function Settings() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
-    paddingTop: 60,
+    backgroundColor: '#0A0E1A',
+    paddingTop: 44,
     paddingHorizontal: 20,
+    paddingBottom: 100,
   },
   title: {
     fontSize: 28,
-    fontFamily: 'Inter-Bold',
-    color: '#fff',
-    marginBottom: 30,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 32,
+    lineHeight: 34,
   },
   section: {
-    marginBottom: 30,
+    marginBottom: 32,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontFamily: 'Inter-SemiBold',
-    color: '#888',
-    marginBottom: 15,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6B7280',
+    textTransform: 'capitalize',
+    marginBottom: 12,
+    marginLeft: 20,
   },
   setting: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: 'rgba(26, 31, 46, 0.7)',
+    borderRadius: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
   },
   settingText: {
     fontSize: 16,
-    fontFamily: 'Inter-Regular',
-    color: '#fff',
+    fontWeight: '500',
+    color: '#FFFFFF',
+    flex: 1,
   },
   button: {
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: 'rgba(26, 31, 46, 0.7)',
+    borderRadius: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
   },
   buttonText: {
     fontSize: 16,
-    fontFamily: 'Inter-Regular',
-    color: '#fff',
+    fontWeight: '500',
+    color: '#FFFFFF',
   },
   version: {
-    marginTop: 20,
+    marginTop: 32,
     fontSize: 14,
-    fontFamily: 'Inter-Regular',
-    color: '#666',
+    fontWeight: '500',
+    color: '#6B7280',
     textAlign: 'center',
   },
 });
