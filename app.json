@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.perpetuitycorp.boltexponativewind"
+      "bundleIdentifier": "com.perpetuitycorp.livenews"
     },
     "web": {
       "bundler": "metro",
@@ -24,7 +24,7 @@
       "typedRoutes": true
     },
     "android": {
-      "package": "com.perpetuitycorp.boltexponativewind"
+      "package": "com.perpetuitycorp.livenews"
     },
     "extra": {
       "router": {},
