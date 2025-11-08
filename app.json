@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.perpetuitycorp.boltexponativewind"
     },
     "web": {
       "bundler": "metro",
@@ -24,6 +25,12 @@
     },
     "android": {
       "package": "com.perpetuitycorp.boltexponativewind"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "6e3da594-6fad-4dd2-8965-a2357b3d5b1c"
+      }
     }
   }
 }

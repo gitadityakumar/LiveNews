@@ -10,10 +10,11 @@ interface NewsChannel {
 
 interface NewsChannelCardProps {
   channel: NewsChannel;
-  onPress: () => void;
+  onPress: () => void; // Play
+  onReload?: () => void; // Reload to inspect network
 }
 
-export default function NewsChannelCard({ channel, onPress }: NewsChannelCardProps) {
+export default function NewsChannelCard({ channel, onPress, onReload }: NewsChannelCardProps) {
   const getInitials = (name: string) => {
     return name.split(' ').map(word => word[0]).join('').slice(0, 2).toUpperCase();
   };
@@ -27,9 +28,13 @@ export default function NewsChannelCard({ channel, onPress }: NewsChannelCardPro
         <Text style={styles.title}>{channel.name}</Text>
         <Text style={styles.subtitle}>{channel.category}</Text>
       </View>
-      <View style={styles.actionButton}>
-        <RefreshCw size={18} color="#A0A5B3" />
-      </View>
+      <Pressable
+        style={styles.actionButton}
+        onPress={onReload}
+        disabled={!onReload}
+      >
+        <RefreshCw size={18} color={onReload ? '#A0A5B3' : '#4B5563'} />
+      </Pressable>
     </Pressable>
   );
 }

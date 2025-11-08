@@ -29,38 +29,28 @@ export default function VideoPlayerSection({
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playerRef = useRef<VideoPlayer | null>(null);
 
-  const player = useVideoPlayer(streamUrl, (player) => {
-    player.loop = true;
-    player.play();
+  const player = useVideoPlayer(streamUrl, (p) => {
+    p.loop = true;
+    p.play();
+    playerRef.current = p;
     setIsPlaying(true);
   });
 
-  // Store player reference
-  // Sync local playing state with player state
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (isMounted && playerRef.current) {
-        setIsPlaying(playerRef.current.playing);
-      }
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [isMounted]);
-
+  // When streamUrl changes, expo-video handles replacing the underlying player.
+  // We rely on the hook's lifecycle; do NOT reuse a released player.
   useEffect(() => {
     playerRef.current = player;
   }, [player]);
 
-  // Cleanup only on unmount
+  // Cleanup only on unmount (single place)
   useEffect(() => {
     return () => {
-      if (playerRef.current) {
-        try {
+      try {
+        if (playerRef.current) {
           playerRef.current.pause();
-        } catch (error) {
-          // Player may already be released, ignore error
         }
-      }
+      } catch {}
+      playerRef.current = null;
     };
   }, []);
 
@@ -68,8 +58,6 @@ export default function VideoPlayerSection({
     if (Platform.OS !== 'web') {
       ScreenOrientation.unlockAsync();
     }
-
-    // Track component mount state
     setIsMounted(true);
     return () => {
       setIsMounted(false);
@@ -141,15 +129,15 @@ export default function VideoPlayerSection({
   };
 
   const jumpToLive = async () => {
-    if (!isMounted) return;
-
+    if (!isMounted || !playerRef.current) return;
+    const p = playerRef.current;
     setIsDelayed(false);
     try {
-      if (player.duration > 0) {
-        player.currentTime = player.duration;
-        player.play();
+      if (p.duration > 0) {
+        p.currentTime = p.duration;
+        p.play();
       } else {
-        await player.replaceAsync(streamUrl);
+        await p.replaceAsync(streamUrl);
       }
     } catch (error) {
       // Handle player error silently - player may be released
@@ -158,31 +146,32 @@ export default function VideoPlayerSection({
 
   useEffect(() => {
     const checkPlaybackStatus = setInterval(() => {
-      if (isMounted && player.duration > 0) {
-        const isDelayed = player.currentTime < player.duration - 5;
-        setIsDelayed(isDelayed);
-      }
+      if (!isMounted || !playerRef.current) return;
+      const p = playerRef.current;
+      try {
+        if (p.duration > 0) {
+          const delayed = p.currentTime < p.duration - 5;
+          setIsDelayed(delayed);
+        }
+      } catch {}
     }, 1000);
 
     return () => clearInterval(checkPlaybackStatus);
-  }, [player, isMounted]);
+  }, [isMounted]);
 
   // Ensure video continues playing when entering fullscreen mode
   useEffect(() => {
-    if (isMounted && isFullscreen) {
-      const timer = setTimeout(() => {
-        try {
-          if (!player.playing) {
-            player.play();
-          }
-        } catch (error) {
-          // Handle error silently - player may be released
+    if (!isMounted || !isFullscreen || !playerRef.current) return;
+    const p = playerRef.current;
+    const timer = setTimeout(() => {
+      try {
+        if (!p.playing) {
+          p.play();
         }
-      }, 100); // Small delay to allow orientation change to complete
-
-      return () => clearTimeout(timer);
-    }
-  }, [isFullscreen, isMounted, player]);
+      } catch {}
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [isFullscreen, isMounted]);
 
   const controlsOpacity = useAnimatedStyle(() => ({
     opacity: withTiming(showControls ? 1 : 0, {
@@ -195,14 +184,17 @@ export default function VideoPlayerSection({
   return (
     <View style={containerStyle}>
       <View style={isFullscreen ? styles.fullscreenVideoContainer : styles.videoContainer}>
-        <VideoView
-          key={streamUrl}
-          player={player}
-          style={isFullscreen ? styles.fullscreenVideo : styles.video}
-          contentFit="contain"
-          nativeControls={false}
-          fullscreenOptions={{ enable: false }}
-        />
+        {playerRef.current && (
+          <VideoView
+            // Key forces remount when URL changes to avoid stale/released player issues
+            key={streamUrl}
+            player={playerRef.current}
+            style={isFullscreen ? styles.fullscreenVideo : styles.video}
+            contentFit="contain"
+            nativeControls={false}
+            fullscreenOptions={{ enable: false }}
+          />
+        )}
         
         {/* Full-screen overlay for controls */}
         <View style={[styles.overlayContainer, { zIndex: isFullscreen ? 9999 : 10 }]}>
@@ -220,13 +212,14 @@ export default function VideoPlayerSection({
           >
             <Pressable
               onPress={() => {
-                if (!isMounted) return;
+                if (!isMounted || !playerRef.current) return;
+                const p = playerRef.current;
                 try {
-                  if (player.playing) {
-                    player.pause();
+                  if (p.playing) {
+                    p.pause();
                     setIsPlaying(false);
                   } else {
-                    player.play();
+                    p.play();
                     setIsPlaying(true);
                   }
                 } catch (error) {
@@ -260,16 +253,17 @@ export default function VideoPlayerSection({
               </Pressable>
               <Pressable
                 onPress={() => {
-                  if (!isMounted) return;
+                  if (!isMounted || !playerRef.current) return;
+                  const p = playerRef.current;
                   try {
-                    player.muted = !player.muted;
+                    p.muted = !p.muted;
                   } catch (error) {
                     // Handle error silently - player may be released
                   }
                 }}
                 style={styles.controlButton}
               >
-                {player.muted ? (
+                {playerRef.current?.muted ? (
                   <VolumeX color="white" size={20} />
                 ) : (
                   <Volume2 color="white" size={20} />
