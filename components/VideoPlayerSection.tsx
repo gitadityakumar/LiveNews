@@ -36,15 +36,18 @@ export default function VideoPlayerSection({
     setIsPlaying(true);
   });
 
+  // keep playerRef in sync, but never hold/restore stale native objects
+  useEffect(() => {
+    playerRef.current = player ?? null;
+  }, [player]);
+
   // When streamUrl changes, expo-video handles replacing the underlying player.
   // We rely on the hook's lifecycle; do NOT reuse a released player.
-  useEffect(() => {
-    playerRef.current = player;
-  }, [player]);
 
   // Cleanup only on unmount (single place)
   useEffect(() => {
     return () => {
+      // on unmount, stop playback; do NOT reuse this player afterwards
       try {
         if (playerRef.current) {
           playerRef.current.pause();
