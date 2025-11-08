@@ -1,25 +1,96 @@
-import { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { StyleSheet, View, Pressable, Text } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import VideoPlayerSection from '@/components/VideoPlayerSection';
 import NewsChannelList from '@/components/NewsChannelList';
-import { STREAMS } from '@/constants/data';
+import { STREAMS, NEWS_CHANNELS } from '@/constants/data';
 import { fullscreenEmitter } from './_layout';
+import { getM3U8Link } from '@/utils/storage';
+import { useRouter, useFocusEffect } from 'expo-router';
 
 export default function LiveNews() {
+  const router = useRouter();
   const [region, setRegion] = useState<'india' | 'usa'>('india');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentStreamIndex, setCurrentStreamIndex] = useState(0);
+  const [currentStreamUrl, setCurrentStreamUrl] = useState<string | null>(STREAMS['india'][0]);
 
   useEffect(() => {
     setCurrentStreamIndex(0);
+    setCurrentStreamUrl(STREAMS[region][0]);
   }, [region]);
+
+  const resolveStreamUrl = async (regionKey: 'india' | 'usa', streamIndex: number): Promise<string | null> => {
+    const base = STREAMS[regionKey][streamIndex] ?? null;
+
+    // For US channels, prefer cached dynamic .m3u8 if available
+    if (regionKey === 'usa') {
+      const channel = NEWS_CHANNELS.usa.find((c) => c.streamIndex === streamIndex);
+      if (channel) {
+        const cached = await getM3U8Link(String(channel.id));
+        if (cached && cached.includes('.m3u8')) return cached;
+      }
+    }
+
+    return base;
+  };
 
   const handleChannelSelect = async (streamIndex: number) => {
     setCurrentStreamIndex(streamIndex);
+    const url = await resolveStreamUrl(region, streamIndex);
+    if (url) setCurrentStreamUrl(url);
   };
 
-  const currentStream = STREAMS[region][currentStreamIndex];
+  const handleReloadChannel = (channelId: number) => {
+    // Map channel id to page URL. For India we skip; for US we provide.
+    const usChannel = NEWS_CHANNELS.usa.find((c) => c.id === channelId);
+    if (!usChannel) return;
+
+    // Example mapping - customize with real page URLs
+    let pageUrl: string | null = null;
+    if (usChannel.name.includes('Bloomberg')) pageUrl = 'https://www.bloomberg.com/live/us';
+    else if (usChannel.name.includes('ABC News')) pageUrl = 'https://www.livenewsnow.com/american/abc-news-2.html';
+    else if (usChannel.name.includes('Yahoo Finance')) pageUrl = 'https://finance.yahoo.com/live';
+    else if (usChannel.name.includes('CNN')) pageUrl = 'https://www.livenewsnow.com/american/cnn-live-streaming-free.html';
+    else if (usChannel.name.includes('CNBC')) pageUrl = 'https://www.cnbc.com/live-tv';
+
+    if (!pageUrl) return;
+
+    router.push({
+      pathname: '/NetworkInspectorScreen',
+      params: { channelId: String(channelId), pageUrl },
+    });
+  };
+
+  // Refresh current stream URL whenever this screen regains focus (e.g. after Reload flow)
+  useFocusEffect(
+    React.useCallback(() => {
+      let isActive = true;
+
+      const refresh = async () => {
+        if (region === 'usa') {
+          const channel = NEWS_CHANNELS.usa.find((c) => c.streamIndex === currentStreamIndex);
+          if (channel) {
+            const cached = await getM3U8Link(String(channel.id));
+            if (isActive && cached && cached.includes('.m3u8')) {
+              setCurrentStreamUrl(cached);
+              return;
+            }
+          }
+        }
+        // fallback to static if no cached or not usa
+        if (isActive) {
+          setCurrentStreamUrl(STREAMS[region][currentStreamIndex]);
+        }
+      };
+
+      refresh();
+
+      return () => {
+        isActive = false;
+      };
+    }, [region, currentStreamIndex])
+  );
 
   return (
     <SafeAreaProvider>
@@ -27,7 +98,7 @@ export default function LiveNews() {
         <View style={styles.container}>
           {/* VideoPlayerSection rendered outside of hidden content to maintain fullscreen visibility */}
           <VideoPlayerSection
-            streamUrl={currentStream}
+            streamUrl={currentStreamUrl || STREAMS[region][currentStreamIndex]}
             isFullscreen={isFullscreen}
             setIsFullscreen={setIsFullscreen}
             fullscreenEmitter={fullscreenEmitter}
@@ -54,6 +125,7 @@ export default function LiveNews() {
             <NewsChannelList
               region={region}
               onChannelSelect={handleChannelSelect}
+              onReloadChannel={handleReloadChannel}
             />
           </View>
         </View>

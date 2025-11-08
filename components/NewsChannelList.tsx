@@ -6,10 +6,11 @@ import { useTabBarVisibility } from './TabBarVisibilityContext';
 
 interface NewsChannelListProps {
   region: 'india' | 'usa';
-  onChannelSelect: (streamIndex: number) => void;
+  onChannelSelect: (streamIndex: number) => void; // when user taps Play
+  onReloadChannel: (channelId: number) => void; // when user taps Reload
 }
 
-export default function NewsChannelList({ region, onChannelSelect }: NewsChannelListProps) {
+export default function NewsChannelList({ region, onChannelSelect, onReloadChannel }: NewsChannelListProps) {
   const channels = NEWS_CHANNELS[region];
   const scrollViewRef = useRef<ScrollView>(null);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -61,6 +62,7 @@ export default function NewsChannelList({ region, onChannelSelect }: NewsChannel
             key={channel.id}
             channel={channel}
             onPress={() => onChannelSelect(channel.streamIndex)}
+            onReload={() => onReloadChannel(channel.id)}
           />
         ))}
       </ScrollView>
