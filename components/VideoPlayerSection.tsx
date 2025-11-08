@@ -187,11 +187,11 @@ export default function VideoPlayerSection({
   return (
     <View style={containerStyle}>
       <View style={isFullscreen ? styles.fullscreenVideoContainer : styles.videoContainer}>
-        {playerRef.current && (
+        {player && (
           <VideoView
-            // Key forces remount when URL changes to avoid stale/released player issues
+            // Always use the current hook-managed player; never reuse a released instance
             key={streamUrl}
-            player={playerRef.current}
+            player={player}
             style={isFullscreen ? styles.fullscreenVideo : styles.video}
             contentFit="contain"
             nativeControls={false}
