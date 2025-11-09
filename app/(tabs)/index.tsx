@@ -51,7 +51,7 @@ export default function LiveNews() {
     if (usChannel.name.includes('Bloomberg')) pageUrl = 'https://www.bloomberg.com/live/us';
     else if (usChannel.name.includes('ABC News')) pageUrl = 'https://www.livenewsnow.com/american/abc-news-2.html';
     else if (usChannel.name.includes('Yahoo Finance')) pageUrl = 'https://finance.yahoo.com/live';
-    else if (usChannel.name.includes('CNN')) pageUrl = 'https://www.livenewsnow.com/american/cnn-live-streaming-free.html';
+    else if (usChannel.name.includes('CNN')) pageUrl = 'https://www.livenewsnow.com/american/cnn-live-free.html';
     else if (usChannel.name.includes('CNBC')) pageUrl = 'https://www.cnbc.com/live-tv';
 
     if (!pageUrl) return;

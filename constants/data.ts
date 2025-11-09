@@ -10,7 +10,7 @@ export const STREAMS = {
     'https://dai.google.com/linear/hls/pb/event/lM8p51KmSTGPTXxOdnMyEA/stream/0168b9d3-b808-4c7c-b52b-6a4eeaaf9949:TPE2/master.m3u8',
     'https://content.uplynk.com/channel/3324f2467c414329b3b0cc5cd987b6be.m3u8',
     'https://d1ewctnvcwvvvu.cloudfront.net/v1/master/7b67fbda7ab859400a821e9aa0deda20ab7ca3d2/yahooLive/playlist.m3u8?ads.D_ID=%5BD_ID%5D&ads.HS_URL=http%3A%2F%2Fhaystack.tv%2Fid%2F45AsUAVdb&ads.HS_LIVE_AD_TOKEN=3d5ae581763be2fce3d8fb7a1c43eda55d7f87039d086b6c27f90c8fea6194c2d1fee74ceddae92efc18f4cdad9eb75ffe82dbf788f0c5b8045218f89c5153b8&ads.us_privacy=1---&ads.D_MK=web&ads.D_ML=%5BSS_D_ML%5D&ads.D_OV=4.6&ads.D_DNT=%5BD_DNT%5D',
-    'https://cdn.livenewsplayer.com/hls/cnnsd/cnnsd/playlist.m3u8?secstarttime=1762612699&secendtime=1762619899&sechash=Kp3drmm99Af_a_Dlqlzu9YsQxaXHmTaTE2UFePk-k8E=',
+    'https://cdn.livenewsplayer.com/hls/cnnsd/cnnsd/playlist.m3u8?secstarttime=1762663092&secendtime=1762670292&sechash=ttOJsPno_RtGhJBDQEmdyn-grIy3oSHJxgcWCeIgl3Q=',
     'https://nw18live.cdn.jio.com/bpk-tv/CNBC_TV18_NW18_MOB/output01/index.m3u8?__hdnea__=st=1744949212~exp=1745035612~acl=/*~hmac=87efaf4076bb149a5eee7a113b35034e2aad785c768264076d9cfb6fb43021f2'
   ],
 };
