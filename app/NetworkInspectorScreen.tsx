@@ -27,8 +27,14 @@ const buildInjectedScript = (): string => `
         var lower = url.toLowerCase();
         // Prefer real playlist URLs, not tracking/error endpoints
         if (lower.endsWith('master.m3u8') || lower.endsWith('playlist.m3u8')) return true;
-        // Whitelist known hosts (Bloomberg, ABC etc.)
-        if (lower.includes('dai.google.com') || lower.includes('abc') || lower.includes('bloomberg')) return true;
+        // Whitelist known hosts (Bloomberg, CNN, ABC etc.)
+        if (
+          lower.includes('dai.google.com') ||
+          lower.includes('cdn.livenewsplayer.com') ||
+          lower.includes('abc') ||
+          lower.includes('bloomberg') ||
+          lower.includes('cnn')
+        ) return true;
         return false;
       } catch (e) {
         return false;
@@ -93,11 +99,12 @@ const buildInjectedScript = (): string => `
   })();
 `;
 
+// Try to normalize common wrapped/tracking URLs into the underlying playlist
 const extractRealM3U8 = (inputUrl: string): string | null => {
   try {
     const urlObj = new URL(inputUrl);
 
-    // Common pattern: real .m3u8 is inside param-like fields inside a tracking URL
+    // Common patterns used by sites like ABC / CNN / aggregators:
     const possibleParams = ['param8', 'url', 'streamUrl'];
     for (const key of possibleParams) {
       const value = urlObj.searchParams.get(key);
@@ -183,7 +190,8 @@ const NetworkInspectorScreen: React.FC = () => {
         const rawUrl = parsed.url.trim();
         // console.log('[Inspector] Parsed M3U8 candidate (raw):', rawUrl);
 
-        const finalUrl = extractRealM3U8(rawUrl);
+        // Try to unwrap tracking URLs; if nothing found, use the raw URL directly
+        const finalUrl = extractRealM3U8(rawUrl) || rawUrl;
         // console.log('[Inspector] Normalized M3U8 (final):', finalUrl);
 
         if (!isValidPlaylist(finalUrl)) {
@@ -210,7 +218,7 @@ const NetworkInspectorScreen: React.FC = () => {
           },
         ]);
       } catch (error) {
-        console.warn('[Inspector] Error handling WebView message', error);
+        // console.warn('[Inspector] Error handling WebView message', error);
       }
     },
     [channelId, hasCaptured, router]
