@@ -5,6 +5,8 @@ export const STREAMS = {
     'https://nw18live.cdn.jio.com/bpk-tv/CNBC_TV18_NW18_MOB/output01/CNBC_TV18_NW18_MOB-audio_98834_eng=98800-video=3724000.m3u8',
     'https://nw18live.cdn.jio.com/bpk-tv/CNN_News18_NW18_MOB/output01/CNN_News18_NW18_MOB-audio_98835_hin=98800-video=3724000.m3u8',
     'https://dztlhgid9me95.cloudfront.net/live-tv/Vidgyor/timesnow/live_720p/chunks.m3u8',
+    'https://dknttpxmr0dwf.cloudfront.net/index_57.m3u8',
+    'https://nw18live.cdn.jio.com/bpk-tv/CNBC_Awaaz_NW18_MOB/output01/CNBC_Awaaz_NW18_MOB-audio_98834_hin=98800-video=3724000.m3u8',
   ],
   usa: [
     'https://dai.google.com/linear/hls/pb/event/lM8p51KmSTGPTXxOdnMyEA/stream/0168b9d3-b808-4c7c-b52b-6a4eeaaf9949:TPE2/master.m3u8',
@@ -22,7 +24,8 @@ export const NEWS_CHANNELS = {
     { id: 3, name: 'CNBC TV18', category: 'Business', streamIndex: 2 },
     { id: 4, name: 'CNN-News18', category: 'English News', streamIndex: 3 },
     { id: 5, name: 'Times Now', category: 'English News', streamIndex: 4 },
-    { id: 6, name: 'Times Now', category: 'English News', streamIndex: 4 },
+    { id: 6, name: 'Zee Tv', category: 'English News', streamIndex: 5 },
+    {id:7,name:'CNBC Awaaz',category:'Business',streamIndex:6},
    
 
   ],
