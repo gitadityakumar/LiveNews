@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.perpetuitycorp.livenews"
+      "bundleIdentifier": "com.perpetuitylab.livenews"
     },
     "web": {
       "bundler": "metro",
@@ -24,7 +24,7 @@
       "typedRoutes": true
     },
     "android": {
-      "package": "com.perpetuitycorp.livenews"
+      "package": "com.perpetuitylab.livenews"
     },
     "extra": {
       "router": {},

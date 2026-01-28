@@ -1,12 +1,10 @@
 export const STREAMS = {
   india: [
-    'https://ndtv24x7elemarchana.akamaized.net/hls/live/2003678-b/ndtv24x7/master.m3u8',
+    'https://dztlhgid9me95.cloudfront.net/live-tv/Vidgyor/etswadesh/etswadesh_master.m3u8',
     'https://dwby15d04agvq.cloudfront.net/index_5.m3u8',
     'https://aajtaklive-amd.akamaized.net/hls/live/2014416/aajtak/aajtaklive/live_720p/chunks.m3u8',
     'https://nw18live.cdn.jio.com/bpk-tv/CNN_News18_NW18_MOB/output01/CNN_News18_NW18_MOB-audio_98835_hin=98800-video=3724000.m3u8',
-    'https://dztlhgid9me95.cloudfront.net/live-tv/Vidgyor/timesnow/live_720p/chunks.m3u8',
-    
-    'https://nw18live.cdn.jio.com/bpk-tv/CNBC_Awaaz_NW18_MOB/output01/CNBC_Awaaz_NW18_MOB-audio_98834_hin=98800-video=3724000.m3u8',
+    'https://nw18live.cdn.jio.com/bpk-tv/CNBC_Awaaz_NW18_MOB/output01/CNBC_Awaaz_NW18_MOB-audio_98834_hin=98800-video=2293600.m3u8',
     'https://d2s40ae9uabrl.cloudfront.net/index_4.m3u8',
   ],
   usa: [
@@ -21,23 +19,22 @@ export const STREAMS = {
 
 export const NEWS_CHANNELS = {
   india: [
-    { id: 1, name: 'NDTV 24x7', category: 'English News', streamIndex: 0 },
+    { id: 1, name: 'ET Swadesh', category: 'English News', streamIndex: 0 },
     { id: 2, name: 'Z Business', category: 'International', streamIndex: 1 },
     { id: 3, name: 'AajTak Live', category: 'Business', streamIndex: 2 },
     { id: 4, name: 'CNN-News18', category: 'English News', streamIndex: 3 },
-    { id: 5, name: 'Times Now', category: 'English News', streamIndex: 4 },
-    {id:6,name:'CNBC Awaaz',category:'Business',streamIndex:5},
-    {id:7,name:'Zee-Haryana',category:'Business',streamIndex:6},
+    {id:5,name:'CNBC Awaaz',category:'Business',streamIndex:4},
+    {id:6,name:'Zee-Haryana',category:'Business',streamIndex:5},
 
    
 
   ],
   usa: [
-    { id: 6, name: 'Bloomberg TV', category: 'Business', streamIndex: 0 },
-    { id: 7, name: 'ABC News Live', category: 'US News', streamIndex: 1 },
-    { id: 8, name: 'Yahoo Finance', category: 'Finance', streamIndex: 2 },
-    { id: 9, name: 'CNN Live', category: 'US News', streamIndex: 3 },
-    { id: 10, name: 'CNBC US', category: 'Business', streamIndex: 4 },
-     { id: 11, name: 'Wion Live', category: 'Business', streamIndex: 5 },
+    { id: 1, name: 'Bloomberg TV', category: 'Business', streamIndex: 0 },
+    { id: 2, name: 'ABC News Live', category: 'US News', streamIndex: 1 },
+    { id: 3, name: 'Yahoo Finance', category: 'Finance', streamIndex: 2 },
+    { id: 4, name: 'CNN Live', category: 'US News', streamIndex: 3 },
+    { id: 5, name: 'CNBC US', category: 'Business', streamIndex: 4 },
+     { id: 6, name: 'Wion Live', category: 'Business', streamIndex: 5 },
   ],
 };
