@@ -5,9 +5,9 @@
   "private": true,
   "scripts": {
     "dev": "expo start",
-    "build:web": "expo export --platform web",
+    "build-p-a": "expo run:android --variant release",
     "lint": "expo lint",
-    "android": "expo run:android",
+    "android": "expo run:android --variant debugOptimized",
     "ios": "expo run:ios"
   },
   "dependencies": {
@@ -51,6 +51,8 @@
     "@types/react": "~19.1.10",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~10.0.0",
+    "expo-atlas": "^0.4.0",
+    "source-map-explorer": "^2.5.3",
     "typescript": "~5.9.2"
   }
 }
