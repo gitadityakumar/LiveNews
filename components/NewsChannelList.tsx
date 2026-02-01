@@ -14,39 +14,26 @@ export default function NewsChannelList({ region, onChannelSelect, onReloadChann
   const channels = NEWS_CHANNELS[region];
   const scrollViewRef = useRef<ScrollView>(null);
   const [lastScrollY, setLastScrollY] = useState(0);
-  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { setTabBarVisible } = useTabBarVisibility();
 
   const handleScroll = (event: any) => {
     const currentScrollY = event.nativeEvent.contentOffset.y;
-    const isScrollingUp = currentScrollY < lastScrollY;
-    const isScrollingDown = currentScrollY > lastScrollY && currentScrollY > 100;
+    
+    // Ignore initial bounce/negative scroll
+    if (currentScrollY < 0) return;
 
-    // Update tab bar visibility based on scroll direction
-    if (isScrollingUp || isScrollingDown) {
-      setTabBarVisible(isScrollingUp);
+    const diff = currentScrollY - lastScrollY;
+    const isScrollingUp = diff < -20; // Added threshold to avoid jitter
+    const isScrollingDown = diff > 20 && currentScrollY > 50;
+
+    if (isScrollingUp) {
+      setTabBarVisible(true);
+    } else if (isScrollingDown) {
+      setTabBarVisible(false);
     }
 
     setLastScrollY(currentScrollY);
-
-    // Clear existing timeout
-    if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
-    }
-
-    // Show tab bar after scrolling stops
-    scrollTimeoutRef.current = setTimeout(() => {
-      setTabBarVisible(true);
-    }, 150);
   };
-
-  useEffect(() => {
-    return () => {
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-    };
-  }, []);
 
   return (
     <View style={styles.container}>

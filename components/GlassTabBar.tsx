@@ -1,14 +1,31 @@
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { View, Pressable, Text, StyleSheet } from 'react-native';
+import { View, Pressable, Text, StyleSheet, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Home, Settings } from 'lucide-react-native';
 import { useTabBarVisibility } from './TabBarVisibilityContext';
+import Animated, { useAnimatedStyle, withTiming, withSpring } from 'react-native-reanimated';
+import { useEffect } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const { isTabBarVisible } = useTabBarVisibility();
+  const insets = useSafeAreaInsets();
   const iconSize = 24;
   const iconColor = '#FFFFFF';
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        {
+          translateY: withSpring(isTabBarVisible ? 0 : 150, {
+            damping: 20,
+            stiffness: 90,
+          }),
+        },
+      ],
+    };
+  });
 
   const getIcon = (routeName: string, isFocused: boolean) => {
     const iconProps = {
@@ -27,18 +44,14 @@ export default function GlassTabBar({ state, descriptors, navigation }: BottomTa
     }
   };
 
-  if (!isTabBarVisible) {
-    return null;
-  }
-
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, animatedStyle]}>
       <LinearGradient
         colors={['rgba(10, 14, 26, 0.95)', 'rgba(10, 14, 26, 0.85)']}
         style={styles.gradient}
       >
         <BlurView intensity={30} tint="dark" style={styles.blurContainer}>
-          <View style={styles.tabBar}>
+          <View style={[styles.tabBar, { paddingBottom: insets.bottom > 0 ? insets.bottom : 20 }]}>
             {state.routes.map((route, index) => {
               const { options } = descriptors[route.key];
               const label =
@@ -85,7 +98,7 @@ export default function GlassTabBar({ state, descriptors, navigation }: BottomTa
           </View>
         </BlurView>
       </LinearGradient>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -107,12 +120,11 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     flexDirection: 'row',
-    paddingTop: 8,
-    paddingBottom: 6,
+    paddingTop: 12,
     paddingHorizontal: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderTopColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius:70,
+    // borderRadius:70, // Removing border radius to make it full width properly at bottom like standard tabs or keep design choice
   },
   tabItem: {
     flex: 1,
