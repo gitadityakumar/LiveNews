@@ -24,7 +24,7 @@ import {
   GestureDetector,
   GestureHandlerRootView,
 } from 'react-native-gesture-handler';
-import { X, Maximize2, Minimize2, Pause, Play, Volume2, VolumeX } from 'lucide-react-native';
+import { X, Maximize2, Minimize2, Pause, Play, Volume2, VolumeX, MoveDiagonal, Scaling, ArrowUpLeft, ArrowDownRight } from 'lucide-react-native';
 import { useState, useRef, useEffect } from 'react';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { fullscreenEmitter } from '../app/(tabs)/_layout'; // Import emitter if needed or pass as prop
@@ -34,7 +34,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 // --- Configuration Constants ---
 // export const VIDEO_HEIGHT_EXPANDED = 260; // REMOVED: Calculated dynamically
 // export const VIDEO_WIDTH_EXPANDED = SCREEN_WIDTH; // REMOVED: Calculated dynamically
-export const VIDEO_WIDTH_MINIMIZED = 160;
+export const VIDEO_WIDTH_MINIMIZED = 180;
 export const VIDEO_HEIGHT_MINIMIZED = VIDEO_WIDTH_MINIMIZED * (9/16); // 16:9 Ratio
 const MARGIN_BOTTOM = 0; 
 const ANIMATION_CONFIG = { duration: 200 };
@@ -54,13 +54,23 @@ export default function DraggableVideoPlayer({ streamUrl, progress, style, onFul
   
   // progress: 0.0 (Expanded) -> 1.0 (Minimized)
   
-  const dimensions = useWindowDimensions();
-  const VIDEO_WIDTH_EXPANDED = dimensions.width;
-  const VIDEO_HEIGHT_EXPANDED = VIDEO_WIDTH_EXPANDED * (9/16); // 16:9 Ratio
+  // progress: 0.0 (Expanded) -> 1.0 (Minimized)
+  
+  const windowDims = useWindowDimensions();
+  const screenDims = Dimensions.get('screen'); // Use screen dims for full coverage
+  
+  // Robustly determine orientation and dimensions
+  const isLandscape = windowDims.width > windowDims.height;
+  
+  // In landscape, we want the FULL screen width (including notch area if possible)
+  // We use the larger usage of screen vs window to ensure we cover background
+  const VIDEO_WIDTH_EXPANDED = isLandscape ? Math.max(screenDims.width, screenDims.height) : windowDims.width;
+  
+  // Calculate 16:9 height based on the expanded width
+  const VIDEO_HEIGHT_EXPANDED = VIDEO_WIDTH_EXPANDED * (9/16); 
 
-  // If we are landscape, the "Height" should be full screen height, else fixed 16:9 height
-  const isLandscape = dimensions.width > dimensions.height;
-  const VIDEO_HEIGHT_EXPANDED_DYNAMIC = isLandscape ? dimensions.height : VIDEO_HEIGHT_EXPANDED;
+  // Dynamic Height: In landscape, use full screen height. In portrait, use 16:9.
+  const VIDEO_HEIGHT_EXPANDED_DYNAMIC = isLandscape ? Math.min(screenDims.width, screenDims.height) : VIDEO_HEIGHT_EXPANDED;
 
   // Controls State
   
@@ -69,6 +79,7 @@ export default function DraggableVideoPlayer({ streamUrl, progress, style, onFul
   const [isPlaying, setIsPlaying] = useState(true);
   const [isDelayed, setIsDelayed] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [contentFit, setContentFit] = useState<'contain' | 'cover'>('contain');
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Position Translations (Used for Free Drag when minimized)
@@ -148,7 +159,12 @@ export default function DraggableVideoPlayer({ streamUrl, progress, style, onFul
         await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
     } else {
         await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT);
+        setContentFit('contain'); // Reset Zoom when exiting fullscreen
     }
+  };
+
+  const toggleZoom = () => {
+    setContentFit(prev => prev === 'contain' ? 'cover' : 'contain');
   };
 
   // Live Check Loop
@@ -166,9 +182,9 @@ export default function DraggableVideoPlayer({ streamUrl, progress, style, onFul
   const SAFE_MARGIN = 16;
   const BOTTOM_TAB_OFFSET = 80;
   
-  const MAX_Y = dimensions.height - VIDEO_HEIGHT_MINIMIZED - BOTTOM_TAB_OFFSET - SAFE_MARGIN;
+  const MAX_Y = windowDims.height - VIDEO_HEIGHT_MINIMIZED - BOTTOM_TAB_OFFSET - SAFE_MARGIN;
   const MIN_Y = insets.top + SAFE_MARGIN; 
-  const MAX_X = dimensions.width - VIDEO_WIDTH_MINIMIZED - SAFE_MARGIN;
+  const MAX_X = windowDims.width - VIDEO_WIDTH_MINIMIZED - SAFE_MARGIN;
   const MIN_X = SAFE_MARGIN;
 
   const containerStyle = useAnimatedStyle(() => {
@@ -306,7 +322,19 @@ export default function DraggableVideoPlayer({ streamUrl, progress, style, onFul
       }
   });
 
-  const composed = Gesture.Race(panGesture, tapGesture);
+  const pinchGesture = Gesture.Pinch()
+    .onUpdate((event) => {
+        if (!isFullscreen) return;
+        
+        // Simple threshold logic for Zoom Interaction
+        if (event.scale > 1.2 && contentFit !== 'cover') {
+            runOnJS(setContentFit)('cover');
+        } else if (event.scale < 0.8 && contentFit !== 'contain') {
+             runOnJS(setContentFit)('contain');
+        }
+    });
+
+  const composed = Gesture.Race(panGesture, tapGesture, pinchGesture);
 
   // Close Button Opacity - Only show when minimized
   const closeStyle = useAnimatedStyle(() => ({
@@ -326,7 +354,9 @@ export default function DraggableVideoPlayer({ streamUrl, progress, style, onFul
       <Animated.View style={[styles.videoContainer, containerStyle]}>
          {/* Close Button Overlay */}
          <Animated.View style={[styles.closeBtn, closeStyle]}>
-            <TouchableOpacity onPress={() => console.log("Close")}>
+            <TouchableOpacity onPress={() => {
+                // TODO: Implement close logic
+            }}>
                 <View style={styles.closeIconBg}>
                   <X size={14} color="white" />
                 </View>
@@ -338,7 +368,7 @@ export default function DraggableVideoPlayer({ streamUrl, progress, style, onFul
           style={[styles.video, style]} // Apply custom style if provided
           player={player}
           nativeControls={false}
-          contentFit="contain"
+          contentFit={contentFit}
           allowsPictureInPicture
         />
         
@@ -362,13 +392,18 @@ export default function DraggableVideoPlayer({ streamUrl, progress, style, onFul
                       {player.muted ? <VolumeX color="white" size={20} /> : <Volume2 color="white" size={20} />}
                   </TouchableOpacity>
              </View>
-             
-             {/* Bottom Right: Fullscreen/Minimize */}
-             <View style={styles.bottomRightControls}>
-                  <TouchableOpacity onPress={toggleFullscreen} style={styles.controlButton}>
-                      {isFullscreen ? <Minimize2 color="white" size={20} /> : <Maximize2 color="white" size={20} />}
-                  </TouchableOpacity>
-             </View>
+                          {/* Bottom Right: Fullscreen/Minimize OR Zoom Toggle */}
+              <View style={styles.bottomRightControls}>
+                  {isFullscreen ? (
+                    <TouchableOpacity onPress={toggleZoom} style={styles.controlButton}>
+                        {contentFit === 'cover' ? <Minimize2 color="white" size={20} /> : <Maximize2 color="white" size={20} />}
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity onPress={toggleFullscreen} style={styles.controlButton}>
+                        <Maximize2 color="white" size={20} />
+                    </TouchableOpacity>
+                  )}
+              </View>
         </Animated.View>
       </Animated.View>
     </GestureDetector>
