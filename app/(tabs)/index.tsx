@@ -1,13 +1,12 @@
-// import DraggableVideoDemo from '../draggable_demo';
 
-// export default DraggableVideoDemo;
+import DraggableVideoPlayer from '@/components/DraggableVideoPlayer';
+import Animated, { useSharedValue, useAnimatedStyle, interpolate } from 'react-native-reanimated';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import React, { useCallback, useState, useEffect } from 'react';
-import { StyleSheet, View, Pressable, Text } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import VideoPlayerSection from '@/components/VideoPlayerSection';
+import { StyleSheet, View, Pressable, Text, useWindowDimensions } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import NewsChannelList from '@/components/NewsChannelList';
-import { STREAMS, NEWS_CHANNELS } from '@/constants/data';
-import { CHANNEL_URLS } from '@/constants/data';
+import { STREAMS, NEWS_CHANNELS, CHANNEL_URLS } from '@/constants/data';
 import { fullscreenEmitter } from './_layout';
 import { getM3U8Link } from '@/utils/storage';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -15,9 +14,20 @@ import { useRouter, useFocusEffect } from 'expo-router';
 export default function LiveNews() {
   const router = useRouter();
   const [region, setRegion] = useState<'india' | 'usa'>('india');
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  // Restore isFullscreen state
+  const [isFullscreen, setIsFullscreen] = useState(false); 
   const [currentStreamIndex, setCurrentStreamIndex] = useState(0);
   const [currentStreamUrl, setCurrentStreamUrl] = useState<string | null>(STREAMS['india'][0]);
+  
+  const progress = useSharedValue(0);
+  const { width } = useWindowDimensions();
+  const VIDEO_HEIGHT = width * (9/16);
+
+  const contentAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      marginTop: interpolate(progress.value, [0, 1], [VIDEO_HEIGHT, 0]),
+    };
+  });
 
   useEffect(() => {
     setCurrentStreamIndex(0);
@@ -97,17 +107,20 @@ export default function LiveNews() {
   );
 
   return (
-    <SafeAreaProvider>
-      <View style={styles.safeArea}>
-        <View style={styles.container}>
-          {/* VideoPlayerSection rendered outside of hidden content to maintain fullscreen visibility */}
-          <VideoPlayerSection
-            streamUrl={currentStreamUrl || STREAMS[region][currentStreamIndex]}
-            isFullscreen={isFullscreen}
-            setIsFullscreen={setIsFullscreen}
-            fullscreenEmitter={fullscreenEmitter}
-          />
-          <View style={[styles.contentArea, isFullscreen && styles.hiddenContent]}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+          <View style={styles.container}>
+            <DraggableVideoPlayer 
+              streamUrl={currentStreamUrl || STREAMS[region][currentStreamIndex]}
+              progress={progress}
+              onFullscreenChange={(fs) => {
+                  setIsFullscreen(fs);
+                  fullscreenEmitter.emit(fs);
+              }}
+            />
+            
+            <Animated.View style={[styles.contentArea, contentAnimatedStyle]}>
             <View style={styles.regionSelector}>
               <View style={styles.regionToggle}>
                 <Pressable
@@ -131,10 +144,11 @@ export default function LiveNews() {
               onChannelSelect={handleChannelSelect}
               onReloadChannel={handleReloadChannel}
             />
+            </Animated.View>
           </View>
-        </View>
-      </View>
-    </SafeAreaProvider>
+        </SafeAreaView>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -156,7 +170,7 @@ const styles = StyleSheet.create({
   },
   regionSelector: {
     paddingHorizontal: 20,
-    // paddingVertical: ,
+    paddingVertical: 10,
   },
   regionToggle: {
     flexDirection: 'row',
