@@ -38,3 +38,13 @@ export const NEWS_CHANNELS = {
      { id: 6, name: 'Wion Live', category: 'Business', streamIndex: 5 },
   ],
 };
+
+
+
+export const CHANNEL_URLS = {
+  BLOOMBERG: 'https://www.bloomberg.com/live/us',
+  ABC_NEWS: 'https://www.livenewsnow.com/american/abc-news-2.html',
+  YAHOO_FINANCE: 'https://finance.yahoo.com/live',
+  CNN: 'https://www.livenewsnow.com/american/cnn-live-free.html',
+  CNBC: 'https://www.cnbc.com/live-tv',
+};

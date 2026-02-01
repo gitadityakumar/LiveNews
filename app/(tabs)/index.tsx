@@ -1,9 +1,13 @@
+// import DraggableVideoDemo from '../draggable_demo';
+
+// export default DraggableVideoDemo;
 import React, { useCallback, useState, useEffect } from 'react';
 import { StyleSheet, View, Pressable, Text } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import VideoPlayerSection from '@/components/VideoPlayerSection';
 import NewsChannelList from '@/components/NewsChannelList';
 import { STREAMS, NEWS_CHANNELS } from '@/constants/data';
+import { CHANNEL_URLS } from '@/constants/data';
 import { fullscreenEmitter } from './_layout';
 import { getM3U8Link } from '@/utils/storage';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -48,11 +52,11 @@ export default function LiveNews() {
 
     // Example mapping - customize with real page URLs
     let pageUrl: string | null = null;
-    if (usChannel.name.includes('Bloomberg')) pageUrl = 'https://www.bloomberg.com/live/us';
-    else if (usChannel.name.includes('ABC News')) pageUrl = 'https://www.livenewsnow.com/american/abc-news-2.html';
-    else if (usChannel.name.includes('Yahoo Finance')) pageUrl = 'https://finance.yahoo.com/live';
-    else if (usChannel.name.includes('CNN')) pageUrl = 'https://www.livenewsnow.com/american/cnn-live-free.html';
-    else if (usChannel.name.includes('CNBC')) pageUrl = 'https://www.cnbc.com/live-tv';
+    if (usChannel.name.includes('Bloomberg')) pageUrl = CHANNEL_URLS.BLOOMBERG;
+    else if (usChannel.name.includes('ABC News')) pageUrl = CHANNEL_URLS.ABC_NEWS;
+    else if (usChannel.name.includes('Yahoo Finance')) pageUrl = CHANNEL_URLS.YAHOO_FINANCE;
+    else if (usChannel.name.includes('CNN')) pageUrl = CHANNEL_URLS.CNN;
+    else if (usChannel.name.includes('CNBC')) pageUrl = CHANNEL_URLS.CNBC;
 
     if (!pageUrl) return;
 

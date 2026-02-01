@@ -16,7 +16,7 @@
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/native": "^7.0.14",
-    "expo": "^54.0.21",
+    "expo": "~54.0.33",
     "expo-blur": "~15.0.7",
     "expo-camera": "~17.0.8",
     "expo-constants": "~18.0.10",
@@ -24,7 +24,7 @@
     "expo-haptics": "~15.0.7",
     "expo-linear-gradient": "~15.0.7",
     "expo-linking": "~8.0.8",
-    "expo-router": "~6.0.14",
+    "expo-router": "~6.0.23",
     "expo-screen-orientation": "~9.0.7",
     "expo-splash-screen": "~31.0.10",
     "expo-status-bar": "~3.0.8",
@@ -52,7 +52,11 @@
     "eslint": "^9.0.0",
     "eslint-config-expo": "~10.0.0",
     "expo-atlas": "^0.4.0",
-    "source-map-explorer": "^2.5.3",
     "typescript": "~5.9.2"
+  },
+  "overrides": {
+    "lucide-react-native": {
+      "react": "$react"
+    }
   }
 }
