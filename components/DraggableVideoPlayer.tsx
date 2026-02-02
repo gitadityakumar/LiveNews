@@ -83,6 +83,7 @@ export default function DraggableVideoPlayer({ streamUrl, progress, style, onFul
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [contentFit, setContentFit] = useState<'contain' | 'cover'>('contain');
   const [isLoading, setIsLoading] = useState(true);
+  const isMounted = useRef(true); // Track mount status for background tasks
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Position Translations (Used for Free Drag when minimized)
@@ -104,7 +105,9 @@ export default function DraggableVideoPlayer({ streamUrl, progress, style, onFul
   
   // Clean up player when component unmounts explicitly
   useEffect(() => {
+    isMounted.current = true;
     return () => {
+        isMounted.current = false;
         try {
             if (player) player.pause();
         } catch (e) {
@@ -190,9 +193,15 @@ export default function DraggableVideoPlayer({ streamUrl, progress, style, onFul
   // Live Check Loop
   useEffect(() => {
     const interval = setInterval(() => {
-      if (player.duration > 0) {
-         // Simple check: if we are > 5s behind duration, we are delayed
-         setIsDelayed(player.currentTime < player.duration - 5);
+      if (!isMounted.current || !player) return;
+      
+      try {
+        if (player.duration > 0) {
+           // Simple check: if we are > 5s behind duration, we are delayed
+           setIsDelayed(player.currentTime < player.duration - 5);
+        }
+      } catch (error) {
+        // Shared object might have been released already
       }
     }, 1000);
     return () => clearInterval(interval);

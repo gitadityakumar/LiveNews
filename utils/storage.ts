@@ -12,7 +12,7 @@ export const saveM3U8Link = async (channelId: string, url: string): Promise<void
     const key = buildM3U8Key(channelId);
     await AsyncStorage.setItem(key, url);
   } catch (error) {
-    console.warn('Failed to save m3u8 URL', { channelId, error });
+    // Fail silently or handle appropriately
   }
 };
 
@@ -23,7 +23,6 @@ export const getM3U8Link = async (channelId: string): Promise<string | null> => 
     const value = await AsyncStorage.getItem(key);
     return value || null;
   } catch (error) {
-    console.warn('Failed to load m3u8 URL', { channelId, error });
     return null;
   }
 };
@@ -34,7 +33,7 @@ export const clearM3U8Link = async (channelId: string): Promise<void> => {
     const key = buildM3U8Key(channelId);
     await AsyncStorage.removeItem(key);
   } catch (error) {
-    console.warn('Failed to clear m3u8 URL', { channelId, error });
+    // Fail silently
   }
 };
 

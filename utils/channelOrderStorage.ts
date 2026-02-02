@@ -15,7 +15,6 @@ export async function getChannelOrder(region: 'india' | 'usa'): Promise<number[]
     }
     return null;
   } catch (error) {
-    console.error('Error reading channel order:', error);
     return null;
   }
 }
@@ -28,6 +27,6 @@ export async function saveChannelOrder(region: 'india' | 'usa', orderedIds: numb
     const key = `${CHANNEL_ORDER_KEY_PREFIX}${region}`;
     await AsyncStorage.setItem(key, JSON.stringify(orderedIds));
   } catch (error) {
-    console.error('Error saving channel order:', error);
+    // Silent fail
   }
 }

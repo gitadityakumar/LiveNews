@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { saveM3U8Link } from '../utils/storage';
+import TracingBorder from '../components/TracingBorder';
 
 // Params passed via navigation
 interface NetworkInspectorParams {
@@ -158,7 +159,6 @@ const NetworkInspectorScreen: React.FC = () => {
     const timer = setTimeout(() => {
       if (!hasCaptured) {
         setTimedOut(true);
-        // console.log('[Inspector] Scan timed out without finding .m3u8');
       }
     }, SCAN_TIMEOUT_MS);
 
@@ -171,7 +171,6 @@ const NetworkInspectorScreen: React.FC = () => {
 
       try {
         const data = event.nativeEvent.data;
-        // console.log('[Inspector] Raw message from WebView:', data);
         let parsed: any = null;
 
         // Try JSON first
@@ -188,37 +187,24 @@ const NetworkInspectorScreen: React.FC = () => {
         }
 
         const rawUrl = parsed.url.trim();
-        // console.log('[Inspector] Parsed M3U8 candidate (raw):', rawUrl);
-
-        // Try to unwrap tracking URLs; if nothing found, use the raw URL directly
         const finalUrl = extractRealM3U8(rawUrl) || rawUrl;
-        // console.log('[Inspector] Normalized M3U8 (final):', finalUrl);
 
         if (!isValidPlaylist(finalUrl)) {
-          // console.log('[Inspector] Rejected URL (not valid playable m3u8):', finalUrl);
           return;
         }
 
         if (!channelId) {
-          console.warn('[Inspector] Missing channelId, cannot save m3u8 URL');
           return;
         }
 
         setHasCaptured(true);
-        // console.log('[Inspector] Saving M3U8 for channel', String(channelId), '=>', finalUrl);
         await saveM3U8Link(String(channelId), finalUrl as string);
 
-        Alert.alert('Stream updated', 'New stream URL found.', [
-          {
-            text: 'OK',
-            onPress: () => {
-              if (router.canGoBack()) router.back();
-              else router.replace('/');
-            },
-          },
-        ]);
+        // Silent navigation after capture
+        if (router.canGoBack()) router.back();
+        else router.replace('/');
       } catch (error) {
-        // console.warn('[Inspector] Error handling WebView message', error);
+        // No log
       }
     },
     [channelId, hasCaptured, router]
@@ -240,31 +226,36 @@ const NetworkInspectorScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView style={fullscreenWebOnly ? styles.abcContainer : styles.container}>
-      {!fullscreenWebOnly && (
-        <View style={styles.infoContainer}>
-          <Text style={styles.title}>Play the stream to capture URL</Text>
-          <Text style={styles.subtitle}>Channel: {channelId}</Text>
-          <Text style={styles.subtitle}>We will auto-detect the .m3u8 while you watch.</Text>
-          {timedOut && !hasCaptured && (
-            <Text style={[styles.subtitle, { color: '#f97316' }]}>No .m3u8 detected yet. This channel may use protected playback.</Text>
-          )}
-        </View>
-      )}
+    <View style={{ flex: 1, backgroundColor: '#050816' }}>
+      {/* Visual Indicator: Tracing border while capturing is in progress */}
+      {!hasCaptured && !timedOut && <TracingBorder />}
 
-      <View style={styles.webviewContainer}>
-        <WebView
-          source={{ uri: String(pageUrl) }}
-          onMessage={onMessage}
-          injectedJavaScriptBeforeContentLoaded={injectedJavaScriptBeforeContentLoaded}
-          javaScriptEnabled
-          domStorageEnabled
-          allowsInlineMediaPlayback
-          mediaPlaybackRequiresUserAction={false}
-          style={styles.visibleWebView}
-        />
-      </View>
-    </SafeAreaView>
+      <SafeAreaView style={fullscreenWebOnly ? styles.abcContainer : styles.container}>
+        {!fullscreenWebOnly && (
+          <View style={styles.infoContainer}>
+            <Text style={styles.title}>Play the stream to capture URL</Text>
+            <Text style={styles.subtitle}>Channel: {channelId}</Text>
+            <Text style={styles.subtitle}>We will auto-detect the .m3u8 while you watch.</Text>
+            {timedOut && !hasCaptured && (
+              <Text style={[styles.subtitle, { color: '#f97316' }]}>No .m3u8 detected yet. This channel may use protected playback.</Text>
+            )}
+          </View>
+        )}
+
+        <View style={styles.webviewContainer}>
+          <WebView
+            source={{ uri: String(pageUrl) }}
+            onMessage={onMessage}
+            injectedJavaScriptBeforeContentLoaded={injectedJavaScriptBeforeContentLoaded}
+            javaScriptEnabled
+            domStorageEnabled
+            allowsInlineMediaPlayback
+            mediaPlaybackRequiresUserAction={false}
+            style={styles.visibleWebView}
+          />
+        </View>
+      </SafeAreaView>
+    </View>
   );
 };
 
