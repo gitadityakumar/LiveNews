@@ -1,10 +1,10 @@
-import { useVideoPlayer, VideoView } from 'expo-video';
+import { useVideoPlayer, VideoView, VideoPlayerStatus } from 'expo-video';
 import type { VideoPlayer } from 'expo-video';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { Maximize2, Minimize2, Pause, Play, Volume2, VolumeX } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
@@ -26,6 +26,7 @@ export default function VideoPlayerSection({
   const [isDelayed, setIsDelayed] = useState(false);
   const [isMounted, setIsMounted] = useState(true);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playerRef = useRef<VideoPlayer | null>(null);
 
@@ -39,6 +40,23 @@ export default function VideoPlayerSection({
   // keep playerRef in sync, but never hold/restore stale native objects
   useEffect(() => {
     playerRef.current = player ?? null;
+  }, [player]);
+
+  // Track player status for loading indicator
+  useEffect(() => {
+    if (!player) return;
+    
+    const handleStatusChange = (payload: { status: VideoPlayerStatus }) => {
+      setIsLoading(payload.status === 'loading' || payload.status === 'idle');
+    };
+    
+    // Check initial status
+    setIsLoading(player.status === 'loading' || player.status === 'idle');
+    
+    player.addListener('statusChange', handleStatusChange);
+    return () => {
+      player.removeListener('statusChange', handleStatusChange);
+    };
   }, [player]);
 
   // When streamUrl changes, expo-video handles replacing the underlying player.
@@ -199,6 +217,13 @@ export default function VideoPlayerSection({
           />
         )}
         
+        {/* Loading Indicator */}
+        {isLoading && (
+          <BlurView intensity={40} tint="dark" style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#3B82F6" />
+          </BlurView>
+        )}
+        
         {/* Full-screen overlay for controls */}
         <View style={[styles.overlayContainer, { zIndex: isFullscreen ? 9999 : 10 }]}>
           {/* Touch overlay - Always visible to capture touches */}
@@ -327,6 +352,13 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     backgroundColor: '#000',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 50,
   },
   // New style for fullscreen video
   fullscreenVideo: {

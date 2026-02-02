@@ -7,9 +7,10 @@ import {
   TouchableOpacity,
   StatusBar,
   Text,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useVideoPlayer, VideoView } from 'expo-video';
+import { useVideoPlayer, VideoView, VideoPlayerStatus } from 'expo-video';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -28,6 +29,7 @@ import { X, Maximize2, Minimize2, Pause, Play, Volume2, VolumeX, MoveDiagonal, S
 import { useState, useRef, useEffect } from 'react';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { fullscreenEmitter } from '../app/(tabs)/_layout'; // Import emitter if needed or pass as prop
+import { BlurView } from 'expo-blur';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -80,6 +82,7 @@ export default function DraggableVideoPlayer({ streamUrl, progress, style, onFul
   const [isDelayed, setIsDelayed] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [contentFit, setContentFit] = useState<'contain' | 'cover'>('contain');
+  const [isLoading, setIsLoading] = useState(true);
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Position Translations (Used for Free Drag when minimized)
@@ -107,6 +110,23 @@ export default function DraggableVideoPlayer({ streamUrl, progress, style, onFul
         } catch (e) {
             // Ignore error if player is already released
         }
+    };
+  }, [player]);
+
+  // Track player status for loading indicator
+  useEffect(() => {
+    if (!player) return;
+    
+    const handleStatusChange = (payload: { status: VideoPlayerStatus }) => {
+      setIsLoading(payload.status === 'loading' || payload.status === 'idle');
+    };
+    
+    // Check initial status
+    setIsLoading(player.status === 'loading' || player.status === 'idle');
+    
+    player.addListener('statusChange', handleStatusChange);
+    return () => {
+      player.removeListener('statusChange', handleStatusChange);
     };
   }, [player]);
 
@@ -372,6 +392,13 @@ export default function DraggableVideoPlayer({ streamUrl, progress, style, onFul
           allowsPictureInPicture
         />
         
+        {/* Loading Indicator */}
+        {isLoading && (
+          <BlurView intensity={40} tint="dark" style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#3B82F6" />
+          </BlurView>
+        )}
+        
         {/* Expanded Controls Overlay */}
         <Animated.View style={[styles.controlsOverlay, controlsStyle]} pointerEvents="box-none">
              {/* Center Play/Pause */}
@@ -428,6 +455,13 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     backgroundColor: '#000',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 50,
   },
   closeBtn: {
       position: 'absolute',
