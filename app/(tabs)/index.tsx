@@ -56,17 +56,20 @@ export default function LiveNews() {
   };
 
   const handleReloadChannel = (channelId: number) => {
-    // Map channel id to page URL. For India we skip; for US we provide.
-    const usChannel = NEWS_CHANNELS.usa.find((c) => c.id === channelId);
-    if (!usChannel) return;
+    if (region !== 'usa') return;
 
-    // Example mapping - customize with real page URLs
+    // Map channel id to page URL for the current region
+    const channel = NEWS_CHANNELS[region].find((c) => c.id === channelId);
+    if (!channel) return;
+
     let pageUrl: string | null = null;
-    if (usChannel.name.includes('Bloomberg')) pageUrl = CHANNEL_URLS.BLOOMBERG;
-    else if (usChannel.name.includes('ABC News')) pageUrl = CHANNEL_URLS.ABC_NEWS;
-    else if (usChannel.name.includes('Yahoo Finance')) pageUrl = CHANNEL_URLS.YAHOO_FINANCE;
-    else if (usChannel.name.includes('CNN')) pageUrl = CHANNEL_URLS.CNN;
-    else if (usChannel.name.includes('CNBC')) pageUrl = CHANNEL_URLS.CNBC;
+    const name = channel.name;
+
+    if (name.includes('Bloomberg')) pageUrl = CHANNEL_URLS.BLOOMBERG;
+    else if (name.includes('ABC News')) pageUrl = CHANNEL_URLS.ABC_NEWS;
+    else if (name.includes('Yahoo Finance')) pageUrl = CHANNEL_URLS.YAHOO_FINANCE;
+    else if (name.includes('CNN')) pageUrl = CHANNEL_URLS.CNN;
+    else if (name.includes('CNBC')) pageUrl = CHANNEL_URLS.CNBC;
 
     if (!pageUrl) return;
 

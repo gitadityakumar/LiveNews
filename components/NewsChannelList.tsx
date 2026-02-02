@@ -115,7 +115,7 @@ export default function NewsChannelList({ region, onChannelSelect, onReloadChann
           <NewsChannelCard
             channel={item}
             onPress={() => onChannelSelect(item.streamIndex)}
-            onReload={() => onReloadChannel(item.id)}
+            onReload={region === 'usa' ? () => onReloadChannel(item.id) : undefined}
             onLongPress={drag}
             isActive={isActive}
           />

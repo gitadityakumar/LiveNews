@@ -19,23 +19,20 @@ export const STREAMS = {
 
 export const NEWS_CHANNELS = {
   india: [
-    { id: 1, name: 'ET Swadesh', category: 'English News', streamIndex: 0 },
-    { id: 2, name: 'Z Business', category: 'International', streamIndex: 1 },
-    { id: 3, name: 'AajTak Live', category: 'Business', streamIndex: 2 },
-    { id: 4, name: 'CNN-News18', category: 'English News', streamIndex: 3 },
-    {id:5,name:'CNBC Awaaz',category:'Business',streamIndex:4},
-    {id:6,name:'Zee-Haryana',category:'Business',streamIndex:5},
-
-   
-
+    { id: 101, name: 'ET Swadesh', category: 'English News', streamIndex: 0 },
+    { id: 102, name: 'Z Business', category: 'International', streamIndex: 1 },
+    { id: 103, name: 'AajTak Live', category: 'Business', streamIndex: 2 },
+    { id: 104, name: 'CNN-News18', category: 'English News', streamIndex: 3 },
+    { id: 105, name: 'CNBC Awaaz', category: 'Business', streamIndex: 4 },
+    { id: 106, name: 'Zee-Haryana', category: 'Business', streamIndex: 5 },
   ],
   usa: [
-    { id: 1, name: 'Bloomberg TV', category: 'Business', streamIndex: 0 },
-    { id: 2, name: 'ABC News Live', category: 'US News', streamIndex: 1 },
-    { id: 3, name: 'Yahoo Finance', category: 'Finance', streamIndex: 2 },
-    { id: 4, name: 'CNN Live', category: 'US News', streamIndex: 3 },
-    { id: 5, name: 'CNBC US', category: 'Business', streamIndex: 4 },
-     { id: 6, name: 'Wion Live', category: 'Business', streamIndex: 5 },
+    { id: 201, name: 'Bloomberg TV', category: 'Business', streamIndex: 0 },
+    { id: 202, name: 'ABC News Live', category: 'US News', streamIndex: 1 },
+    { id: 203, name: 'Yahoo Finance', category: 'Finance', streamIndex: 2 },
+    { id: 204, name: 'CNN Live', category: 'US News', streamIndex: 3 },
+    { id: 205, name: 'CNBC US', category: 'Business', streamIndex: 4 },
+    { id: 206, name: 'Wion Live', category: 'Business', streamIndex: 5 },
   ],
 };
 
