@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import {   RefreshCw } from 'lucide-react-native';
+import { RefreshCw, GripVertical } from 'lucide-react-native';
 
 interface NewsChannel {
   id: number;
@@ -10,17 +10,38 @@ interface NewsChannel {
 
 interface NewsChannelCardProps {
   channel: NewsChannel;
-  onPress: () => void; // Play
-  onReload?: () => void; // Reload to inspect network
+  onPress: () => void;
+  onReload?: () => void;
+  onLongPress?: () => void;
+  isActive?: boolean;
 }
 
-export default function NewsChannelCard({ channel, onPress, onReload }: NewsChannelCardProps) {
+export default function NewsChannelCard({
+  channel,
+  onPress,
+  onReload,
+  onLongPress,
+  isActive,
+}: NewsChannelCardProps) {
   const getInitials = (name: string) => {
     return name.split(' ').map(word => word[0]).join('').slice(0, 2).toUpperCase();
   };
 
   return (
-    <Pressable style={styles.container} onPress={onPress}>
+    <Pressable
+      style={[
+        styles.container,
+        isActive && styles.activeContainer,
+      ]}
+      onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={150}
+    >
+      {/* Drag Handle */}
+      <View style={styles.dragHandle}>
+        <GripVertical size={20} color="#6B7280" />
+      </View>
+
       <View style={styles.iconContainer}>
         <Text style={styles.icon}>{getInitials(channel.name)}</Text>
       </View>
@@ -43,7 +64,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
     paddingVertical: 16,
     marginHorizontal: 20,
     marginBottom: 12,
@@ -59,6 +80,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 8,
+  },
+  activeContainer: {
+    backgroundColor: 'rgba(59, 130, 246, 0.3)',
+    borderColor: 'rgba(59, 130, 246, 0.5)',
+    transform: [{ scale: 1.02 }],
+  },
+  dragHandle: {
+    paddingRight: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   iconContainer: {
     width: 48,
