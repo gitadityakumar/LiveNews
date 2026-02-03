@@ -53,7 +53,7 @@ export default function Settings() {
         <Pressable style={styles.button}>
           <Text style={styles.buttonText}>Terms of Service</Text>
         </Pressable>
-        <Text style={styles.version}>Version 1.0.0</Text>
+        <Text style={styles.version}>Version 1.0.1</Text>
       </View>
     </View>
   );
