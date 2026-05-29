@@ -1,6 +1,7 @@
 # dependencies
 node_modules/
 android/
+graphify-out/
 
 
 # expo

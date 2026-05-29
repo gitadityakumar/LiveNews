@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.LiveNews" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:navigationBarColor">@color/live_news_background</item>
+        <item name="android:statusBarColor">@color/live_news_background</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
+    <style name="Theme.LiveNews.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/live_news_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/icon</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/live_news_splash_icon_background</item>
+        <item name="postSplashScreenTheme">@style/Theme.LiveNews</item>
+    </style>
+</resources>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="live_news_background">#0B1117</color>
+    <color name="live_news_splash_icon_background">#141B24</color>
+</resources>
