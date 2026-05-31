@@ -3,10 +3,10 @@ package com.perpetuitylab.livenews.theme
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -49,7 +49,7 @@ fun LiveNewsBottomBar(
       onClick = onHomeClick,
       icon = {
         Icon(
-          imageVector = if (selectedTab == LiveNewsBottomTab.Home) Icons.Rounded.Home else Icons.Outlined.Home,
+          imageVector = if (selectedTab == LiveNewsBottomTab.Home) Icons.Filled.Home else Icons.Outlined.Home,
           contentDescription = "Home",
           modifier = Modifier.size(24.dp),
         )
@@ -62,7 +62,7 @@ fun LiveNewsBottomBar(
       onClick = onSettingsClick,
       icon = {
         Icon(
-          imageVector = if (selectedTab == LiveNewsBottomTab.Settings) Icons.Rounded.Settings else Icons.Outlined.Settings,
+          imageVector = if (selectedTab == LiveNewsBottomTab.Settings) Icons.Filled.Settings else Icons.Outlined.Settings,
           contentDescription = "Settings",
           modifier = Modifier.size(24.dp),
         )

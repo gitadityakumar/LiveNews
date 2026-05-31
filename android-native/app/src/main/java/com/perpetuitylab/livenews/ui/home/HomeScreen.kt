@@ -48,7 +48,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -82,6 +82,7 @@ import com.perpetuitylab.livenews.data.LiveNewsPreferences
 import com.perpetuitylab.livenews.data.NewsChannel
 import com.perpetuitylab.livenews.data.Region
 import com.perpetuitylab.livenews.data.liveNewsDataStore
+import com.perpetuitylab.livenews.playback.LiveStreamPlayerController
 import com.perpetuitylab.livenews.playback.PlayerPictureInPictureController
 import com.perpetuitylab.livenews.theme.LiveNewsAccent
 import com.perpetuitylab.livenews.theme.LiveNewsAccentSoft
@@ -105,6 +106,7 @@ import kotlin.math.roundToInt
 
 @Composable
 fun HomeScreen(
+  playerController: LiveStreamPlayerController,
   onOpenSettings: () -> Unit,
   onOpenNetworkInspector: (channelId: Int, pageUrl: String) -> Unit,
   pictureInPictureController: PlayerPictureInPictureController? = null,
@@ -116,6 +118,10 @@ fun HomeScreen(
   val state by viewModel.uiState.collectAsStateWithLifecycle()
   val reloadRequest = state.reloadRequest
 
+  LaunchedEffect(playerController, state.currentUrl) {
+    playerController.load(state.currentUrl)
+  }
+
   LaunchedEffect(reloadRequest) {
     if (reloadRequest != null) {
       onOpenNetworkInspector(reloadRequest.channelId, reloadRequest.pageUrl)
@@ -125,6 +131,7 @@ fun HomeScreen(
 
   HomeScreen(
     state = state,
+    playerController = playerController,
     onRegionSelected = viewModel::selectRegion,
     onChannelSelected = viewModel::selectChannel,
     onReloadChannel = viewModel::requestReload,
@@ -140,6 +147,7 @@ fun HomeScreen(
 @Composable
 private fun HomeScreen(
   state: HomeUiState,
+  playerController: LiveStreamPlayerController,
   onRegionSelected: (Region) -> Unit,
   onChannelSelected: (NewsChannel) -> Unit,
   onReloadChannel: (Int) -> Unit,
@@ -222,7 +230,7 @@ private fun HomeScreen(
                   ChannelCard(
                     channel = channel,
                     isSelected = channel.streamIndex == state.selectedStreamIndex,
-                    showReload = region == Region.USA,
+                    showReload = true,
                     onClick = { onChannelSelected(channel) },
                     onReload = { onReloadChannel(channel.id) },
                     onMoveToIndex = { targetIndex -> onMoveChannelToIndex(channel.id, targetIndex) },
@@ -238,6 +246,7 @@ private fun HomeScreen(
 
       DraggableVideoPlayer(
         streamUrl = state.currentUrl,
+        controller = playerController,
         isFullscreen = isFullscreen,
         onFullscreenChange = { isFullscreen = it },
         onCollapseProgressChange = { playerCollapseProgress = it },
@@ -405,7 +414,7 @@ private fun ChannelCard(
             .semantics { contentDescription = "Refresh stream" },
       ) {
         Icon(
-          imageVector = Icons.Rounded.Refresh,
+          imageVector = Icons.Filled.Refresh,
           contentDescription = null,
           tint = LiveNewsTextSecondary,
           modifier = Modifier.size(20.dp),

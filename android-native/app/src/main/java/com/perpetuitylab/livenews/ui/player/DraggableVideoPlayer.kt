@@ -55,10 +55,10 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.perpetuitylab.livenews.playback.LiveStreamPlayerController
 import com.perpetuitylab.livenews.playback.Media3HlsPlayer
 import com.perpetuitylab.livenews.playback.PlayerPictureInPictureController
 import com.perpetuitylab.livenews.playback.VideoResizeMode
-import com.perpetuitylab.livenews.playback.rememberLiveStreamPlayerController
 import com.perpetuitylab.livenews.theme.LiveNewsAccentOverlayBorder
 import com.perpetuitylab.livenews.theme.LiveNewsAccentOverlayStrong
 import kotlinx.coroutines.delay
@@ -68,6 +68,7 @@ import kotlin.math.roundToInt
 @Composable
 fun DraggableVideoPlayer(
   streamUrl: String,
+  controller: LiveStreamPlayerController,
   isFullscreen: Boolean,
   onFullscreenChange: (Boolean) -> Unit,
   onCollapseProgressChange: (Float) -> Unit = {},
@@ -75,8 +76,11 @@ fun DraggableVideoPlayer(
   bottomNavigationHeight: Dp = 88.dp,
   pictureInPictureController: PlayerPictureInPictureController? = null,
 ) {
-  val controller = rememberLiveStreamPlayerController(streamUrl = streamUrl, autoplay = true)
   val density = LocalDensity.current
+
+  LaunchedEffect(controller, streamUrl) {
+    controller.load(streamUrl, autoplay = true)
+  }
   val safePadding = WindowInsets.safeDrawing.asPaddingValues()
 
   var isMinimized by remember { mutableStateOf(false) }

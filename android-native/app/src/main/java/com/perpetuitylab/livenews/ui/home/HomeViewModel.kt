@@ -16,7 +16,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -61,12 +60,8 @@ class HomeViewModel(private val preferences: LiveNewsPreferences) : ViewModel() 
       .flatMapLatest { selection ->
         val staticUrl = STREAMS.getValue(selection.region).getOrElse(selection.streamIndex) { STREAMS.getValue(selection.region).first() }
 
-        if (selection.region == Region.USA) {
-          preferences.m3u8Link(selection.channel.id).map { cachedUrl ->
-            if (!cachedUrl.isNullOrBlank() && cachedUrl.contains(".m3u8") && cachedUrl !in STALE_STREAM_URLS) cachedUrl else staticUrl
-          }
-        } else {
-          flowOf(staticUrl)
+        preferences.m3u8Link(selection.channel.id).map { cachedUrl ->
+          if (!cachedUrl.isNullOrBlank() && cachedUrl.contains(".m3u8") && cachedUrl !in STALE_STREAM_URLS) cachedUrl else staticUrl
         }
       }
 
@@ -108,9 +103,8 @@ class HomeViewModel(private val preferences: LiveNewsPreferences) : ViewModel() 
   }
 
   fun requestReload(channelId: Int) {
-    if (selectedRegion.value != Region.USA) return
-
-    val channel = NEWS_CHANNELS.getValue(Region.USA).firstOrNull { it.id == channelId } ?: return
+    val region = selectedRegion.value
+    val channel = NEWS_CHANNELS.getValue(region).firstOrNull { it.id == channelId } ?: return
     val pageUrl = pageUrlFor(channel) ?: return
     reloadRequest.value = HomeReloadRequest(channelId = channelId, pageUrl = pageUrl)
   }
@@ -172,6 +166,7 @@ class HomeViewModel(private val preferences: LiveNewsPreferences) : ViewModel() 
   private fun pageUrlFor(channel: NewsChannel): String? {
     val name = channel.name
     return when {
+      name.contains("CNBC Awaaz") -> CHANNEL_URLS.CNBC_AWAAZ
       name.contains("Bloomberg") -> CHANNEL_URLS.BLOOMBERG
       name.contains("ABC News") -> CHANNEL_URLS.ABC_NEWS
       name.contains("Yahoo Finance") -> CHANNEL_URLS.YAHOO_FINANCE

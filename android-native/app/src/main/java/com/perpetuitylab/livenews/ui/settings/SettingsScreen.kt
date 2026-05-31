@@ -73,7 +73,7 @@ fun SettingsScreen(onOpenHome: () -> Unit, modifier: Modifier = Modifier) {
         SettingsButton(title = "Privacy Policy", onClick = {})
         SettingsButton(title = "Terms of Service", onClick = {})
         Spacer(modifier = Modifier.height(20.dp))
-        Text(text = "Version 1.0.1", modifier = Modifier.fillMaxWidth(), color = LiveNewsTextTertiary, style = MaterialTheme.typography.bodyMedium)
+        Text(text = "Version 1.1.1", modifier = Modifier.fillMaxWidth(), color = LiveNewsTextTertiary, style = MaterialTheme.typography.bodyMedium)
       }
     }
   }

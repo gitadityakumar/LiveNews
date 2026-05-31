@@ -2,12 +2,12 @@ package com.perpetuitylab.livenews.navigation
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
@@ -18,6 +18,8 @@ import com.perpetuitylab.livenews.Welcome
 import com.perpetuitylab.livenews.data.LiveNewsPreferences
 import com.perpetuitylab.livenews.data.liveNewsDataStore
 import com.perpetuitylab.livenews.playback.PlayerPictureInPictureController
+import com.perpetuitylab.livenews.playback.createPlayerController
+import com.perpetuitylab.livenews.playback.rememberLifecycleObserver
 import com.perpetuitylab.livenews.ui.home.HomeScreen
 import com.perpetuitylab.livenews.ui.network.NetworkInspectorScreen
 import com.perpetuitylab.livenews.ui.settings.SettingsScreen
@@ -34,6 +36,9 @@ fun LiveNewsNavigation(
   val context = LocalContext.current.applicationContext
   val preferences = remember(context) { LiveNewsPreferences(context.liveNewsDataStore) }
   val scope = rememberCoroutineScope()
+
+  val playerController = remember(context) { createPlayerController(context) }
+  playerController.rememberLifecycleObserver()
 
   NavDisplay(
     backStack = backStack,
@@ -52,6 +57,7 @@ fun LiveNewsNavigation(
 
         entry<Home> {
           HomeScreen(
+            playerController = playerController,
             onOpenSettings = { backStack.add(Settings) },
             onOpenNetworkInspector = { channelId, pageUrl -> backStack.add(NetworkInspector(channelId, pageUrl)) },
             pictureInPictureController = pictureInPictureController,

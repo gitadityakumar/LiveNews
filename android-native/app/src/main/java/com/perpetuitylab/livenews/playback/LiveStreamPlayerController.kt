@@ -313,9 +313,45 @@ fun rememberLiveStreamPlayerController(
   return controller
 }
 
+@OptIn(UnstableApi::class)
+fun createPlayerController(context: Context): LiveStreamPlayerController {
+  val player =
+    ExoPlayer.Builder(context)
+      .setLoadControl(buildLoadControl())
+      .build()
+      .apply { repeatMode = Player.REPEAT_MODE_ONE }
+
+  return LiveStreamPlayerController(
+    player = player,
+    httpDataSourceFactory = buildHttpDataSourceFactory(context),
+  )
+}
+
+@Composable
+fun LiveStreamPlayerController.rememberLifecycleObserver() {
+  val lifecycleOwner = LocalLifecycleOwner.current
+
+  DisposableEffect(lifecycleOwner, this) {
+    val observer =
+      LifecycleEventObserver { _, event ->
+        when (event) {
+          Lifecycle.Event.ON_PAUSE -> this@rememberLifecycleObserver.onHostPause()
+          Lifecycle.Event.ON_RESUME -> this@rememberLifecycleObserver.onHostResume()
+          else -> Unit
+        }
+      }
+
+    lifecycleOwner.lifecycle.addObserver(observer)
+    onDispose {
+      lifecycleOwner.lifecycle.removeObserver(observer)
+      this@rememberLifecycleObserver.release()
+    }
+  }
+}
+
 private fun buildHttpDataSourceFactory(context: Context): DefaultHttpDataSource.Factory =
   DefaultHttpDataSource.Factory()
-    .setUserAgent("LiveNewsAndroid/1.0 (${context.packageName}; Android) Media3-HLS")
+    .setUserAgent("LiveNewsAndroid/1.1 (${context.packageName}; Android) Media3-HLS")
     .setConnectTimeoutMs(10_000)
     .setReadTimeoutMs(15_000)
     .setAllowCrossProtocolRedirects(true)

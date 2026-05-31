@@ -64,4 +64,5 @@ object CHANNEL_URLS {
   const val YAHOO_FINANCE = "https://finance.yahoo.com/live"
   const val CNN = "https://www.livenewsnow.com/american/cnn-live-free.html"
   const val CNBC = "https://www.cnbc.com/live-tv"
+  const val CNBC_AWAAZ = "https://www.cnbctv18.com/awaaz/live-tv/"
 }
