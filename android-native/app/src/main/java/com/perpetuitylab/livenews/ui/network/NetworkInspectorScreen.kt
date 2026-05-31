@@ -4,7 +4,9 @@ import android.annotation.SuppressLint
 import android.os.Handler
 import android.os.Looper
 import android.view.ViewGroup
+import android.webkit.CookieManager
 import android.webkit.WebChromeClient
+import android.webkit.WebSettings
 import android.webkit.WebView
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -13,6 +15,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +34,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.BlurredEdgeTreatment
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -67,6 +74,11 @@ fun NetworkInspectorScreen(
   }
 
   Surface(modifier = modifier.fillMaxSize(), color = Color(0xFF050816)) {
+    Box(modifier = Modifier.fillMaxSize()) {
+      if (capturedUrl == null && !timedOut) {
+        FullScreenScanningGlow()
+      }
+
     Column(modifier = Modifier.safeDrawingPadding().padding(16.dp)) {
       Text(
         text = "Play the stream to capture URL",
@@ -100,6 +112,7 @@ fun NetworkInspectorScreen(
         modifier = Modifier.padding(top = 12.dp).fillMaxWidth().weight(1f),
       )
     }
+    }
   }
 }
 
@@ -126,6 +139,7 @@ private fun NetworkInspectorWebView(
 ) {
   val context = LocalContext.current
   val mainHandler = remember { Handler(Looper.getMainLooper()) }
+  val captureScript = remember { M3u8InjectedScript.build() }
   val currentOnCandidate by rememberUpdatedState(onCandidate)
   val borderModifier = if (isScanning) Modifier.tracingBorder() else Modifier.border(1.dp, Color(0xFF1F2937))
 
@@ -144,21 +158,27 @@ private fun NetworkInspectorWebView(
           settings.mediaPlaybackRequiresUserGesture = false
           settings.loadsImagesAutomatically = true
           settings.javaScriptCanOpenWindowsAutomatically = true
+          settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
           webChromeClient = WebChromeClient()
+          CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
 
           val candidateCallback: (String) -> Unit = { rawCandidate ->
             mainHandler.post { currentOnCandidate(rawCandidate) }
           }
 
           addJavascriptInterface(M3u8JavascriptBridge(candidateCallback), M3u8JavascriptBridge.BRIDGE_NAME)
-          webViewClient = M3u8CaptureWebViewClient(candidateCallback)
+          webViewClient =
+            M3u8CaptureWebViewClient(candidateCallback) { readyWebView ->
+              readyWebView.evaluateJavascript(captureScript, null)
+            }
+          tag = pageUrl
           loadUrl(pageUrl)
         }
       },
       update = { webView ->
-        val script = M3u8InjectedScript.build()
-        webView.evaluateJavascript(script, null)
-        if (webView.url != pageUrl) {
+        webView.evaluateJavascript(captureScript, null)
+        if (webView.tag != pageUrl) {
+          webView.tag = pageUrl
           webView.loadUrl(pageUrl)
         }
       },
@@ -187,4 +207,58 @@ private fun Modifier.tracingBorder(): Modifier {
     )
 
   return border(BorderStroke(2.dp, Color(0xFF38BDF8).copy(alpha = pulse)))
+}
+
+@Composable
+private fun FullScreenScanningGlow() {
+  val transition = rememberInfiniteTransition(label = "network-inspector-glow")
+  val progress by
+    transition.animateFloat(
+      initialValue = 0f,
+      targetValue = 1f,
+      animationSpec =
+        infiniteRepeatable(
+          animation = tween(durationMillis = 3_600, easing = LinearEasing),
+          repeatMode = RepeatMode.Reverse,
+        ),
+      label = "network-inspector-glow-progress",
+    )
+
+  Canvas(
+    modifier =
+      Modifier
+        .fillMaxSize()
+        .blur(radius = 52.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded),
+  ) {
+    val cyan = Color(0xFF38BDF8)
+    val deepBlue = Color(0xFF075985)
+    val radius = size.maxDimension * 0.78f
+    val driftX = size.width * 0.22f * progress
+    val driftY = size.height * 0.14f * progress
+
+    drawRect(
+      brush =
+        Brush.radialGradient(
+          colors = listOf(cyan.copy(alpha = 0.38f), cyan.copy(alpha = 0.10f), Color.Transparent),
+          center = Offset(-size.width * 0.02f + driftX, size.height * 0.08f + driftY),
+          radius = radius,
+        ),
+    )
+    drawRect(
+      brush =
+        Brush.radialGradient(
+          colors = listOf(deepBlue.copy(alpha = 0.44f), cyan.copy(alpha = 0.12f), Color.Transparent),
+          center = Offset(size.width * 1.02f - driftX, size.height * 0.95f - driftY),
+          radius = radius,
+        ),
+    )
+    drawRect(
+      brush =
+        Brush.radialGradient(
+          colors = listOf(cyan.copy(alpha = 0.18f), Color.Transparent),
+          center = Offset(size.width * (0.68f - progress * 0.22f), size.height * 0.44f),
+          radius = size.maxDimension * 0.48f,
+        ),
+    )
+  }
 }

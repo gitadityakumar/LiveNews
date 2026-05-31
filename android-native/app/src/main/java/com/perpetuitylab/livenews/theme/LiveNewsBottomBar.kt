@@ -1,6 +1,13 @@
 package com.perpetuitylab.livenews.theme
 
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -13,6 +20,8 @@ enum class LiveNewsBottomTab {
   Home,
   Settings,
 }
+
+val LiveNewsBottomBarHeight = 64.dp
 
 @Composable
 fun LiveNewsBottomBar(
@@ -30,22 +39,36 @@ fun LiveNewsBottomBar(
       unselectedTextColor = LiveNewsTextTertiary,
     )
 
-  NavigationBar(modifier = modifier, containerColor = LiveNewsBottomBarBackground, contentColor = LiveNewsTextPrimary) {
+  NavigationBar(
+    modifier = modifier.height(LiveNewsBottomBarHeight),
+    containerColor = LiveNewsBottomBarBackground,
+    contentColor = LiveNewsTextPrimary,
+  ) {
     NavigationBarItem(
       selected = selectedTab == LiveNewsBottomTab.Home,
       onClick = onHomeClick,
-      icon = { LiveNewsHomeIcon(color = iconColor(selectedTab == LiveNewsBottomTab.Home), modifier = Modifier.size(24.dp)) },
+      icon = {
+        Icon(
+          imageVector = if (selectedTab == LiveNewsBottomTab.Home) Icons.Rounded.Home else Icons.Outlined.Home,
+          contentDescription = "Home",
+          modifier = Modifier.size(24.dp),
+        )
+      },
       label = { Text("Home") },
       colors = itemColors,
     )
     NavigationBarItem(
       selected = selectedTab == LiveNewsBottomTab.Settings,
       onClick = onSettingsClick,
-      icon = { LiveNewsSettingsIcon(color = iconColor(selectedTab == LiveNewsBottomTab.Settings), modifier = Modifier.size(24.dp)) },
+      icon = {
+        Icon(
+          imageVector = if (selectedTab == LiveNewsBottomTab.Settings) Icons.Rounded.Settings else Icons.Outlined.Settings,
+          contentDescription = "Settings",
+          modifier = Modifier.size(24.dp),
+        )
+      },
       label = { Text("Settings") },
       colors = itemColors,
     )
   }
 }
-
-private fun iconColor(selected: Boolean) = if (selected) LiveNewsTextPrimary else LiveNewsTextTertiary

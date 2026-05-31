@@ -26,6 +26,35 @@ object M3u8InjectedScript {
           } catch (e) {}
         }
 
+        function scanText(text) {
+          try {
+            if (typeof text !== 'string') return;
+            var normalized = text.replace(/\\\//g, '/');
+            var matches = normalized.match(/https?:\/\/[^\s"'<>\\]+?\.m3u8(?:\?[^\s"'<>\\]*)?/gi) || [];
+            for (var i = 0; i < matches.length; i++) {
+              postCandidate(matches[i]);
+            }
+          } catch (e) {}
+        }
+
+        function scanDocument() {
+          try {
+            if (document.documentElement) {
+              scanText(document.documentElement.innerHTML);
+            }
+          } catch (e) {}
+        }
+
+        function scanPerformanceEntries() {
+          try {
+            if (!window.performance || typeof window.performance.getEntriesByType !== 'function') return;
+            var entries = window.performance.getEntriesByType('resource') || [];
+            for (var i = 0; i < entries.length; i++) {
+              postCandidate(entries[i].name);
+            }
+          } catch (e) {}
+        }
+
         if (typeof window.fetch === 'function') {
           var originalFetch = window.fetch;
           window.fetch = function() {
@@ -61,6 +90,25 @@ object M3u8InjectedScript {
             return originalOpen.apply(this, arguments);
           };
         }
+
+        try {
+          var observer = new MutationObserver(function() {
+            scanDocument();
+            scanPerformanceEntries();
+          });
+          observer.observe(document.documentElement || document, {
+            childList: true,
+            subtree: true,
+            attributes: true
+          });
+        } catch (e) {}
+
+        scanDocument();
+        scanPerformanceEntries();
+        window.setInterval(function() {
+          scanDocument();
+          scanPerformanceEntries();
+        }, 750);
 
         true;
       })();

@@ -5,9 +5,19 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -18,23 +28,32 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -43,12 +62,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -66,11 +90,8 @@ import com.perpetuitylab.livenews.theme.LiveNewsBorder
 import com.perpetuitylab.livenews.theme.LiveNewsBorderSelected
 import com.perpetuitylab.livenews.theme.LiveNewsBottomBar
 import com.perpetuitylab.livenews.theme.LiveNewsBottomTab
-import com.perpetuitylab.livenews.theme.LiveNewsChevronDirection
-import com.perpetuitylab.livenews.theme.LiveNewsChevronIcon
-import com.perpetuitylab.livenews.theme.LiveNewsControlDisabled
+import com.perpetuitylab.livenews.theme.LiveNewsBottomBarHeight
 import com.perpetuitylab.livenews.theme.LiveNewsDragHandleIcon
-import com.perpetuitylab.livenews.theme.LiveNewsRefreshIcon
 import com.perpetuitylab.livenews.theme.LiveNewsSurface
 import com.perpetuitylab.livenews.theme.LiveNewsSurfaceSelected
 import com.perpetuitylab.livenews.theme.LiveNewsSurfaceStrong
@@ -78,7 +99,9 @@ import com.perpetuitylab.livenews.theme.LiveNewsTextPrimary
 import com.perpetuitylab.livenews.theme.LiveNewsTextSecondary
 import com.perpetuitylab.livenews.theme.LiveNewsTextTertiary
 import com.perpetuitylab.livenews.ui.player.DraggableVideoPlayer
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlin.math.roundToInt
 
 @Composable
 fun HomeScreen(
@@ -105,7 +128,7 @@ fun HomeScreen(
     onRegionSelected = viewModel::selectRegion,
     onChannelSelected = viewModel::selectChannel,
     onReloadChannel = viewModel::requestReload,
-    onMoveChannel = viewModel::moveChannel,
+    onMoveChannelToIndex = viewModel::moveChannelToIndex,
     onScrollStart = viewModel::onScrollStart,
     onScrollOffsetChange = viewModel::onScrollOffsetChange,
     onOpenSettings = onOpenSettings,
@@ -120,7 +143,7 @@ private fun HomeScreen(
   onRegionSelected: (Region) -> Unit,
   onChannelSelected: (NewsChannel) -> Unit,
   onReloadChannel: (Int) -> Unit,
-  onMoveChannel: (Int, MoveDirection) -> Unit,
+  onMoveChannelToIndex: (Int, Int) -> Unit,
   onScrollStart: (Int) -> Unit,
   onScrollOffsetChange: (Int) -> Unit,
   onOpenSettings: () -> Unit,
@@ -129,6 +152,9 @@ private fun HomeScreen(
 ) {
   val listState = rememberLazyListState()
   var isFullscreen by remember { mutableStateOf(false) }
+  var playerCollapseProgress by remember { mutableStateOf(0f) }
+  val isInPipMode = pictureInPictureController?.state?.isInPictureInPictureMode == true
+  val safeTopInset = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding()
 
   LaunchedEffect(state.region) { onScrollStart(0) }
   LaunchedEffect(listState) {
@@ -142,34 +168,71 @@ private fun HomeScreen(
     modifier = modifier.fillMaxSize(),
     containerColor = LiveNewsBackground,
     bottomBar = {
-      AnimatedVisibility(visible = state.isBottomBarVisible && !isFullscreen) {
+      AnimatedVisibility(visible = state.isBottomBarVisible && !isFullscreen && !isInPipMode) {
         LiveNewsBottomBar(selectedTab = LiveNewsBottomTab.Home, onHomeClick = {}, onSettingsClick = onOpenSettings)
       }
     },
   ) { padding ->
-    BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(padding)) {
-      val expandedVideoHeight = maxWidth * 9f / 16f
+    Box(modifier = Modifier.fillMaxSize()) {
+      BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(padding)) {
+        val expandedVideoHeight = maxWidth * 9f / 16f
+        val listTopPadding by animateDpAsState(
+          targetValue = lerp(expandedVideoHeight + safeTopInset + 10.dp, safeTopInset + 12.dp, playerCollapseProgress),
+          animationSpec = tween(durationMillis = 180),
+          label = "listTopPadding",
+        )
 
-      LazyColumn(
-        state = listState,
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = expandedVideoHeight + 28.dp, bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-      ) {
-        item { RegionSelector(selectedRegion = state.region, onRegionSelected = onRegionSelected) }
+        if (!isInPipMode) {
+          AnimatedContent(
+            targetState = state.region,
+            modifier = Modifier.fillMaxSize(),
+            transitionSpec = {
+              val toStart = targetState.ordinal > initialState.ordinal
+              val enter = slideInHorizontally(animationSpec = tween(220)) { fullWidth -> if (toStart) fullWidth / 4 else -fullWidth / 4 } + fadeIn(
+                animationSpec = tween(220),
+              )
+              val exit = slideOutHorizontally(animationSpec = tween(220)) { fullWidth -> if (toStart) -fullWidth / 4 else fullWidth / 4 } + fadeOut(
+                animationSpec = tween(220),
+              )
+              enter togetherWith exit
+            },
+            label = "regionTransition",
+          ) { region ->
+            LazyColumn(
+              state = listState,
+              modifier = Modifier.fillMaxSize(),
+              contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = listTopPadding, bottom = 0.dp),
+              verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+              item { RegionSelector(selectedRegion = region, onRegionSelected = onRegionSelected) }
 
-        itemsIndexed(state.channels, key = { _, channel -> channel.id }) { index, channel ->
-          ChannelCard(
-            channel = channel,
-            isSelected = channel.streamIndex == state.selectedStreamIndex,
-            showReload = state.region == Region.USA,
-            canMoveUp = index > 0,
-            canMoveDown = index < state.channels.lastIndex,
-            onClick = { onChannelSelected(channel) },
-            onReload = { onReloadChannel(channel.id) },
-            onMoveUp = { onMoveChannel(channel.id, MoveDirection.UP) },
-            onMoveDown = { onMoveChannel(channel.id, MoveDirection.DOWN) },
-          )
+              itemsIndexed(state.channels, key = { _, channel -> channel.id }) { index, channel ->
+                var isVisible by remember(region, channel.id) { mutableStateOf(false) }
+                LaunchedEffect(region, channel.id) {
+                  delay(index * REGION_CARD_STAGGER_MS)
+                  isVisible = true
+                }
+
+                AnimatedVisibility(
+                  visible = isVisible,
+                  enter =
+                    fadeIn(animationSpec = tween(durationMillis = 260)) +
+                      slideInVertically(animationSpec = tween(durationMillis = 320)) { height -> height / 3 },
+                ) {
+                  ChannelCard(
+                    channel = channel,
+                    isSelected = channel.streamIndex == state.selectedStreamIndex,
+                    showReload = region == Region.USA,
+                    onClick = { onChannelSelected(channel) },
+                    onReload = { onReloadChannel(channel.id) },
+                    onMoveToIndex = { targetIndex -> onMoveChannelToIndex(channel.id, targetIndex) },
+                    index = index,
+                    totalItems = state.channels.size,
+                  )
+                }
+              }
+            }
+          }
         }
       }
 
@@ -177,7 +240,8 @@ private fun HomeScreen(
         streamUrl = state.currentUrl,
         isFullscreen = isFullscreen,
         onFullscreenChange = { isFullscreen = it },
-        bottomNavigationHeight = if (state.isBottomBarVisible && !isFullscreen) 88.dp else 0.dp,
+        onCollapseProgressChange = { playerCollapseProgress = it },
+        bottomNavigationHeight = if (state.isBottomBarVisible && !isFullscreen && !isInPipMode) LiveNewsBottomBarHeight else 0.dp,
         pictureInPictureController = pictureInPictureController,
         modifier = Modifier.fillMaxSize(),
       )
@@ -226,7 +290,7 @@ private fun RegionSelector(selectedRegion: Region, onRegionSelected: (Region) ->
       Button(
         onClick = { onRegionSelected(region) },
         modifier = Modifier.weight(1f),
-        shape = RoundedCornerShape(6.dp),
+        shape = RoundedCornerShape(10.dp),
         colors =
           ButtonDefaults.buttonColors(
             containerColor = if (selectedRegion == region) LiveNewsAccent else Color.Transparent,
@@ -245,24 +309,67 @@ private fun ChannelCard(
   channel: NewsChannel,
   isSelected: Boolean,
   showReload: Boolean,
-  canMoveUp: Boolean,
-  canMoveDown: Boolean,
   onClick: () -> Unit,
   onReload: () -> Unit,
-  onMoveUp: () -> Unit,
-  onMoveDown: () -> Unit,
+  onMoveToIndex: (Int) -> Unit,
+  index: Int,
+  totalItems: Int,
 ) {
   val borderColor = if (isSelected) LiveNewsBorderSelected else LiveNewsBorder
   val background = if (isSelected) LiveNewsSurfaceSelected else LiveNewsSurface
+  val density = LocalDensity.current.density
+  var dragDistanceDp by remember { mutableFloatStateOf(0f) }
+  var isDraggingCard by remember { mutableStateOf(false) }
+  val estimatedCardHeightDp = 98f
 
   Row(
     modifier =
       Modifier.fillMaxWidth()
-        .clip(RoundedCornerShape(8.dp))
+        .offset { IntOffset(0, if (isDraggingCard) (dragDistanceDp * density).roundToInt() else 0) }
+        .zIndex(if (isDraggingCard) 50f else 0f)
+        .graphicsLayer {
+          if (isDraggingCard) {
+            scaleX = 1.02f
+            scaleY = 1.02f
+            alpha = 0.96f
+            shadowElevation = 18.dp.toPx()
+          } else {
+            scaleX = 1f
+            scaleY = 1f
+            alpha = 1f
+            shadowElevation = 0f
+          }
+        }
+        .clip(RoundedCornerShape(10.dp))
         .background(background)
-        .border(1.dp, borderColor, RoundedCornerShape(8.dp))
+        .border(1.dp, borderColor, RoundedCornerShape(10.dp))
         .clickable(onClick = onClick)
-        .padding(horizontal = 10.dp, vertical = 12.dp),
+        .pointerInput(index, totalItems) {
+          detectDragGesturesAfterLongPress(
+            onDragStart = {
+              isDraggingCard = true
+            },
+            onDrag = { change, dragAmount ->
+              change.consume()
+              dragDistanceDp += dragAmount.y / density
+            },
+            onDragEnd = {
+              val deltaItems = (dragDistanceDp / estimatedCardHeightDp).roundToInt()
+              dragDistanceDp = 0f
+              isDraggingCard = false
+              if (deltaItems == 0) return@detectDragGesturesAfterLongPress
+              val targetIndex = (index + deltaItems).coerceIn(0, totalItems - 1)
+              if (targetIndex != index) {
+                onMoveToIndex(targetIndex)
+              }
+            },
+            onDragCancel = {
+              dragDistanceDp = 0f
+              isDraggingCard = false
+            },
+          )
+        }
+        .padding(horizontal = 10.dp, vertical = 10.dp),
     verticalAlignment = Alignment.CenterVertically,
   ) {
     Box(
@@ -273,7 +380,7 @@ private fun ChannelCard(
     Spacer(modifier = Modifier.width(8.dp))
     Box(
       modifier =
-        Modifier.size(48.dp)
+        Modifier.size(44.dp)
           .clip(RoundedCornerShape(8.dp))
           .background(if (isSelected) LiveNewsAccentSoft else LiveNewsSurfaceStrong)
           .border(1.dp, if (isSelected) LiveNewsBorderSelected else LiveNewsBorder, RoundedCornerShape(8.dp)),
@@ -288,24 +395,20 @@ private fun ChannelCard(
       Text(text = channel.category, color = LiveNewsTextSecondary, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
     if (showReload) {
-      IconButton(onClick = onReload, modifier = Modifier.size(36.dp).semantics { contentDescription = "Refresh stream" }) {
-        LiveNewsRefreshIcon(color = LiveNewsTextSecondary, modifier = Modifier.size(20.dp))
-      }
-    }
-
-    Column(verticalArrangement = Arrangement.spacedBy(0.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-      IconButton(onClick = onMoveUp, enabled = canMoveUp, modifier = Modifier.size(28.dp).semantics { contentDescription = "Move channel up" }) {
-        LiveNewsChevronIcon(
-          direction = LiveNewsChevronDirection.Up,
-          color = if (canMoveUp) LiveNewsTextSecondary else LiveNewsControlDisabled,
-          modifier = Modifier.size(18.dp),
-        )
-      }
-      IconButton(onClick = onMoveDown, enabled = canMoveDown, modifier = Modifier.size(28.dp).semantics { contentDescription = "Move channel down" }) {
-        LiveNewsChevronIcon(
-          direction = LiveNewsChevronDirection.Down,
-          color = if (canMoveDown) LiveNewsTextSecondary else LiveNewsControlDisabled,
-          modifier = Modifier.size(18.dp),
+      IconButton(
+        onClick = onReload,
+        modifier =
+          Modifier
+            .size(36.dp)
+            .background(LiveNewsAccentSoft, CircleShape)
+            .border(1.dp, LiveNewsBorderSelected, CircleShape)
+            .semantics { contentDescription = "Refresh stream" },
+      ) {
+        Icon(
+          imageVector = Icons.Rounded.Refresh,
+          contentDescription = null,
+          tint = LiveNewsTextSecondary,
+          modifier = Modifier.size(20.dp),
         )
       }
     }
@@ -313,6 +416,13 @@ private fun ChannelCard(
 }
 
 private fun initials(name: String): String = name.split(" ").mapNotNull { word -> word.firstOrNull()?.uppercaseChar() }.joinToString("").take(2)
+
+private const val REGION_CARD_STAGGER_MS = 55L
+
+private fun lerp(start: androidx.compose.ui.unit.Dp, stop: androidx.compose.ui.unit.Dp, fraction: Float): androidx.compose.ui.unit.Dp {
+  val clamped = fraction.coerceIn(0f, 1f)
+  return start + (stop - start) * clamped
+}
 
 private tailrec fun Context.findActivity(): Activity? =
   when (this) {

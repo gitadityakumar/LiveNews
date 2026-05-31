@@ -8,6 +8,7 @@ import com.perpetuitylab.livenews.data.LiveNewsPreferences
 import com.perpetuitylab.livenews.data.NEWS_CHANNELS
 import com.perpetuitylab.livenews.data.NewsChannel
 import com.perpetuitylab.livenews.data.Region
+import com.perpetuitylab.livenews.data.STALE_STREAM_URLS
 import com.perpetuitylab.livenews.data.STREAMS
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -62,7 +63,7 @@ class HomeViewModel(private val preferences: LiveNewsPreferences) : ViewModel() 
 
         if (selection.region == Region.USA) {
           preferences.m3u8Link(selection.channel.id).map { cachedUrl ->
-            if (!cachedUrl.isNullOrBlank() && cachedUrl.contains(".m3u8")) cachedUrl else staticUrl
+            if (!cachedUrl.isNullOrBlank() && cachedUrl.contains(".m3u8") && cachedUrl !in STALE_STREAM_URLS) cachedUrl else staticUrl
           }
         } else {
           flowOf(staticUrl)
@@ -118,21 +119,18 @@ class HomeViewModel(private val preferences: LiveNewsPreferences) : ViewModel() 
     reloadRequest.value = null
   }
 
-  fun moveChannel(channelId: Int, direction: MoveDirection) {
+  fun moveChannelToIndex(channelId: Int, targetIndex: Int) {
     val region = selectedRegion.value
     val current = uiState.value.channels
     val currentIndex = current.indexOfFirst { channel -> channel.id == channelId }
-    val targetIndex =
-      when (direction) {
-        MoveDirection.UP -> currentIndex - 1
-        MoveDirection.DOWN -> currentIndex + 1
-      }
+    if (currentIndex == -1) return
 
-    if (currentIndex == -1 || targetIndex !in current.indices) return
+    val clampedTarget = targetIndex.coerceIn(0, current.lastIndex)
+    if (clampedTarget == currentIndex) return
 
     val reordered = current.toMutableList()
     val channel = reordered.removeAt(currentIndex)
-    reordered.add(targetIndex, channel)
+    reordered.add(clampedTarget, channel)
 
     viewModelScope.launch { preferences.saveChannelOrder(region, reordered.map { it.id }) }
   }
@@ -203,11 +201,6 @@ class HomeViewModel(private val preferences: LiveNewsPreferences) : ViewModel() 
     DOWN,
     NONE,
   }
-}
-
-enum class MoveDirection {
-  UP,
-  DOWN,
 }
 
 class HomeViewModelFactory(private val preferences: LiveNewsPreferences) : ViewModelProvider.Factory {

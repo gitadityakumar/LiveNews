@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -32,6 +33,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.perpetuitylab.livenews.playback.LiveStreamPlayerState
 import com.perpetuitylab.livenews.playback.VideoResizeMode
+import com.perpetuitylab.livenews.theme.LiveNewsAccentOverlay
+import com.perpetuitylab.livenews.theme.LiveNewsAccentOverlayBorder
+import com.perpetuitylab.livenews.theme.LiveNewsInfo
 
 @Composable
 internal fun PlayerLoadingOverlay(modifier: Modifier = Modifier) {
@@ -39,7 +43,7 @@ internal fun PlayerLoadingOverlay(modifier: Modifier = Modifier) {
     modifier = modifier.background(Color.Black.copy(alpha = 0.48f)),
     contentAlignment = Alignment.Center,
   ) {
-    CircularProgressIndicator(color = Color(0xFF3B82F6), strokeWidth = 3.dp)
+    CircularProgressIndicator(color = LiveNewsInfo, strokeWidth = 3.dp)
   }
 }
 
@@ -69,8 +73,7 @@ internal fun PlayerControlsOverlay(
       horizontalArrangement = Arrangement.spacedBy(10.dp),
       verticalAlignment = Alignment.CenterVertically,
     ) {
-      LiveBadge(isAtLiveEdge = state.isAtLiveEdge)
-      PlayerTextButton(text = "GO LIVE", onClick = onJumpToLive)
+      LiveBadge(isAtLiveEdge = state.isAtLiveEdge, onClick = onJumpToLive)
       PlayerControlButton(onClick = onMute, contentDescription = if (state.isMuted) "Unmute" else "Mute") {
         MuteIcon(isMuted = state.isMuted)
       }
@@ -93,13 +96,15 @@ internal fun PlayerControlsOverlay(
 }
 
 @Composable
-private fun LiveBadge(isAtLiveEdge: Boolean) {
+private fun LiveBadge(isAtLiveEdge: Boolean, onClick: () -> Unit) {
   Row(
     modifier =
       Modifier
         .height(36.dp)
-        .border(1.dp, Color(0xFFE74C3C), RoundedCornerShape(18.dp))
-        .background(Color(0xCC0A0E1A), RoundedCornerShape(18.dp))
+        .shadow(5.dp, RoundedCornerShape(18.dp))
+        .border(1.dp, LiveNewsAccentOverlayBorder, RoundedCornerShape(18.dp))
+        .background(LiveNewsAccentOverlay, RoundedCornerShape(18.dp))
+        .clickable(role = Role.Button, onClickLabel = "Jump to live", onClick = onClick)
         .padding(horizontal = 12.dp),
     verticalAlignment = Alignment.CenterVertically,
   ) {
@@ -120,8 +125,9 @@ private fun PlayerTextButton(text: String, onClick: () -> Unit) {
     modifier =
       Modifier
         .defaultMinSize(minWidth = 44.dp, minHeight = 36.dp)
-        .background(Color(0xB02A3142), RoundedCornerShape(18.dp))
-        .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(18.dp))
+        .shadow(5.dp, RoundedCornerShape(18.dp))
+        .background(LiveNewsAccentOverlay, RoundedCornerShape(18.dp))
+        .border(1.dp, LiveNewsAccentOverlayBorder, RoundedCornerShape(18.dp))
         .clickable(role = Role.Button, onClick = onClick)
         .padding(horizontal = 12.dp),
     contentAlignment = Alignment.Center,
@@ -140,8 +146,9 @@ private fun PlayerControlButton(
   Box(
     modifier =
       modifier
-        .background(Color(0xB02A3142), CircleShape)
-        .border(1.dp, Color.White.copy(alpha = 0.14f), CircleShape)
+        .shadow(6.dp, CircleShape)
+        .background(LiveNewsAccentOverlay, CircleShape)
+        .border(1.dp, LiveNewsAccentOverlayBorder, CircleShape)
         .clickable(role = Role.Button, onClickLabel = contentDescription, onClick = onClick),
     contentAlignment = Alignment.Center,
   ) {

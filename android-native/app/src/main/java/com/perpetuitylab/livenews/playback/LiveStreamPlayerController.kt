@@ -45,8 +45,10 @@ data class LiveStreamPlayerState(
 class LiveStreamPlayerController
 internal constructor(
   val player: ExoPlayer,
-  private val mediaSourceFactory: HlsMediaSource.Factory,
+  private val httpDataSourceFactory: DefaultHttpDataSource.Factory,
 ) {
+  private val mediaSourceFactory = HlsMediaSource.Factory(httpDataSourceFactory)
+
   var state by mutableStateOf(LiveStreamPlayerState())
     private set
 
@@ -122,6 +124,7 @@ internal constructor(
     lastPlaybackState = Player.STATE_IDLE
     state = state.copy(isLoading = true, errorMessage = null)
     Log.d(TAG, "load url=$streamUrl autoplay=$autoplay")
+    httpDataSourceFactory.setDefaultRequestProperties(requestHeadersFor(streamUrl))
 
     val mediaItem =
       MediaItem.Builder()
@@ -242,6 +245,15 @@ internal constructor(
     const val LIVE_MAX_OFFSET_MS = 12_000L
     const val LIVE_OFFSET_LOG_INTERVAL_MS = 10_000L
     const val LIVE_OFFSET_LOG_BUCKET_MS = 2_000L
+    const val CNN_STREAM_HOST = "cdn.livenewsplayer.com"
+    const val CNN_STREAM_REFERRER = "https://www.livenewsnow.com/american/cnn-live-free.html"
+
+    fun requestHeadersFor(streamUrl: String): Map<String, String> =
+      if (Uri.parse(streamUrl).host.equals(CNN_STREAM_HOST, ignoreCase = true)) {
+        mapOf("Referer" to CNN_STREAM_REFERRER)
+      } else {
+        emptyMap()
+      }
   }
 }
 
@@ -267,7 +279,7 @@ fun rememberLiveStreamPlayerController(
 
       LiveStreamPlayerController(
         player = player,
-        mediaSourceFactory = HlsMediaSource.Factory(buildHttpDataSourceFactory(context)),
+        httpDataSourceFactory = buildHttpDataSourceFactory(context),
       )
     }
 
